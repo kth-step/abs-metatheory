@@ -1,7 +1,8 @@
 (coq.theory
  (name ABS)
  (package coq-abs-metatheory)
- (synopsis "Formal metatheory in Coq of the ABS language"))
+ (synopsis "Formal metatheory in Coq of the ABS language")
+ (flags :standard -w -deprecated-hint-without-locality))
 
 (rule
  (target abs_defs.v)
