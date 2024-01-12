@@ -1,0 +1,10 @@
+(coq.theory
+ (name ABS)
+ (package coq-abs-metatheory)
+ (synopsis "Formal metatheory in Coq of the ABS language"))
+
+(rule
+ (target abs_defs.v)
+ (deps ../src/abs.ott)
+ (action (run ott -o %{target} %{deps}))
+ (mode fallback))

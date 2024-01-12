@@ -1,0 +1,27 @@
+opam-version: "2.0"
+maintainer: "palmskog@gmail.com"
+version: "dev"
+
+homepage: "https://github.com/kth-step/abs-metatheory"
+dev-repo: "git+https://github.com/kth-step/abs-metatheory.git"
+bug-reports: "https://github.com/kth-step/abs-metatheory/issues"
+license: "proprietary"
+
+synopsis: "Formal metatheory in Coq of the ABS language"
+
+build: ["dune" "build" "-p" name "-j" jobs]
+depends: [
+  "dune" {>= "3.5"}
+  "coq" {>= "8.16"}
+  "coq-ott" {>= "0.33"}
+]
+
+tags: [
+  "category:Computer Science/Semantics and Compilation/Semantics"
+  "keyword:ABS"
+  "logpath:ABS"
+]
+authors: [
+  "Åsmund Kløvstad"
+  "Karl Palmskog"
+]

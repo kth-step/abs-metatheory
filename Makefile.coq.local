@@ -1,0 +1,18 @@
+theories/abs_defs.v: src/abs.ott
+	ott -o $@ $<
+
+doc/report/abs_defs.tex: src/abs.ott
+	ott -o $@ -tex_wrap false $<
+
+doc/report/main.tex: doc/report/main.mng src/abs.ott
+	ott -tex_filter doc/report/main.mng doc/report/main.tex src/abs.ott
+
+doc/report/main.pdf: doc/report/abs_defs.tex doc/report/main.tex
+	pdflatex -output-directory=doc/report doc/report/main.tex
+	pdflatex -output-directory=doc/report doc/report/main.tex
+
+clean::
+	$(HIDE)rm -f theories/abs_defs.v doc/abs_defs.tex \
+	 doc/report/main.tex doc/report/main.log doc/report/main.out \
+ 	 doc/report/main.toc doc/report/main.pdf doc/report/main.aux
+          

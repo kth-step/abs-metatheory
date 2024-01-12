@@ -1,0 +1,68 @@
+\documentclass{easychair}
+
+\usepackage{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{supertabular}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{extpfeil}
+%\usepackage{todonotes}
+\usepackage{doc}
+
+\theoremstyle{definition}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem*{definition}{Definition}
+\newtheorem*{remark}{Remark}
+
+\include{abs_defs}
+
+\renewcommand{\ttdefault}{pcr}
+
+\title{Definition and Formal Metatheory of ABS}
+\author{}
+
+\institute{}
+
+\authorrunning{}
+
+\titlerunning{Definition and Formal Metatheory of ABS}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We define ABS and describe its metatheory.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+\label{sec:intro}
+Introduction goes here.
+
+\section{Syntax}
+\label{sec:syntax}
+
+In this section, we define the abstract syntax of ABS.
+
+%\ottgrammartabular{\ottres\ottinterrule}
+
+%\ottgrammartabular{\otte\ottinterrule}
+
+%\ottgrammartabular{\otto\ottinterrule}
+
+%\ottgrammartabular{\otti\ottinterrule}
+
+\section{Metatheory}
+\label{sec:metatheory}
+Metatheory goes here.
+
+\bibliographystyle{abbrv}
+\bibliography{bib}
+
+\end{document}
