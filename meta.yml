@@ -1,0 +1,72 @@
+---
+fullname: ABS Metatheory
+shortname: abs-metatheory
+organization: kth-step
+community: false
+action: true
+
+synopsis: Formal metatheory in Coq of the ABS language
+
+description: |-
+  Formal metatheory in Coq for the ABS language.
+
+publications:
+- pub_url: https://link.springer.com/chapter/10.1007/978-3-642-25271-6_8
+  pub_title: 'ABS: A Core Language for Abstract Behavioral Specification'
+  pub_doi: 10.1007/978-3-642-25271-6_8
+
+authors:
+- name: Åsmund Kløvstad
+- name: Karl Palmskog
+
+opam-file-maintainer: palmskog@gmail.com
+
+opam-file-version: dev
+
+supported_coq_versions:
+  text: 8.16 or later
+  opam: '{>= "8.16"}'
+
+dependencies:
+- opam:
+    name: coq-ott
+    version: '{>= "0.33"}'
+  description: |-
+    [Ott Coq library](https://github.com/ott-lang/ott) 0.33 or later
+
+tested_coq_opam_versions:
+- version: '8.18'
+- version: '8.17'
+- version: '8.16'
+
+namespace: ABS
+
+keywords:
+- name: ABS
+
+categories:
+- name: Computer Science/Semantics and Compilation/Semantics
+
+build: |-
+  ## Building instructions
+
+  To install all dependencies, do:
+  
+  ```shell
+  opam repo add coq-released https://coq.inria.fr/opam/released
+  opam install coq.8.18.0 coq-ott
+  ```
+  
+  To build when dependencies are installed, do:
+  
+  ```shell
+  git clone https://github.com/kth-step/abs-metatheory.git
+  cd abs-metatheory
+  make   # or make -j <number-of-cores-on-your-machine> 
+  ```
+
+documentation: |-
+  ## Documentation
+
+  See also [ABS Tools](https://github.com/abstools/abstools).
+---

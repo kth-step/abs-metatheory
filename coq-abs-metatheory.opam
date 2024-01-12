@@ -1,3 +1,6 @@
+# This file was generated from `meta.yml`, please do not edit manually.
+# Follow the instructions on https://github.com/coq-community/templates to regenerate.
+
 opam-version: "2.0"
 maintainer: "palmskog@gmail.com"
 version: "dev"
@@ -5,9 +8,11 @@ version: "dev"
 homepage: "https://github.com/kth-step/abs-metatheory"
 dev-repo: "git+https://github.com/kth-step/abs-metatheory.git"
 bug-reports: "https://github.com/kth-step/abs-metatheory/issues"
-license: "proprietary"
+
 
 synopsis: "Formal metatheory in Coq of the ABS language"
+description: """
+Formal metatheory in Coq for the ABS language."""
 
 build: ["dune" "build" "-p" name "-j" jobs]
 depends: [
