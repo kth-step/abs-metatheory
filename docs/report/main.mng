@@ -1,15 +1,15 @@
 \documentclass{easychair}
 
-\usepackage{geometry}
+%\usepackage{geometry}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
-\usepackage{supertabular}
-\usepackage{color}
+%\usepackage{supertabular}
+%\usepackage{color}
 \usepackage{listings}
-\usepackage{extpfeil}
+%\usepackage{extpfeil}
 %\usepackage{todonotes}
-\usepackage{doc}
+%\usepackage{doc}
 
 \theoremstyle{definition}
 
