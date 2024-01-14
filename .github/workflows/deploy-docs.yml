@@ -26,7 +26,7 @@ jobs:
               opam pin add -n -y -k path coq-abs-metatheory .
               opam update -y
               opam install -y -j "$(nproc)" coq-abs-metatheory --deps-only
-              opam install -y -j "$(nproc)" ott conf-texlive
+              opam install --confirm-level=unsafe-yes -j "$(nproc)" ott conf-texlive
             endGroup
             startGroup "Add permissions"
               sudo chown -R coq:coq .
