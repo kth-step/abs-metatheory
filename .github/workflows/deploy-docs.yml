@@ -23,7 +23,7 @@ jobs:
             {{before_install}}
             startGroup "Build dependencies"
               sudo apt-get update -y -q
-              sudo apt-get install texlive -y -q
+              sudo apt-get install texlive-latex-extra -y -q
               opam pin add -n -y -k path coq-abs-metatheory .
               opam update -y
               opam install -y -j "$(nproc)" coq-abs-metatheory --deps-only
