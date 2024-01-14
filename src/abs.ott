@@ -8,6 +8,8 @@ Module Map <: FMapInterface.S := FMapList.Make String_as_OT.
 
 Hint Resolve bool_dec : ott_coq_equality.
 Hint Resolve ascii_dec : ott_coq_equality.
+
+(** * ABS Definitions *)
 }}
 indexvar i, j, n ::=
       {{ lex numeral }}

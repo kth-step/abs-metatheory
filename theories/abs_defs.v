@@ -15,6 +15,8 @@ Module Map <: FMapInterface.S := FMapList.Make String_as_OT.
 Hint Resolve bool_dec : ott_coq_equality.
 Hint Resolve ascii_dec : ott_coq_equality.
 
+(** * ABS Definitions *)
+
 Definition i : Set := nat. (*r index variables (subscripts) *)
 Lemma eq_i: forall (x y : i), {x = y} + {x <> y}.
 Proof.

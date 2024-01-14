@@ -2,6 +2,8 @@ From ABS Require Import abs_defs.
 From Coq Require Import List ssreflect.
 Import ListNotations.
 
+(** * ABS Functional Metatheory *)
+
 Definition subG (G5 G' : G) : Prop :=
   forall (key : string) (elt : ctxv), 
     Map.find key G5 = Some elt ->
