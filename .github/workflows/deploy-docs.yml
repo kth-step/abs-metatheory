@@ -25,6 +25,7 @@ jobs:
               opam pin add -n -y -k path coq-abs-metatheory .
               opam update -y
               opam install -y -j "$(nproc)" coq-abs-metatheory --deps-only
+              opam install -y -j "$(nproc)" ott conf-texlive
             endGroup
             startGroup "Add permissions"
               sudo chown -R coq:coq .
@@ -35,6 +36,9 @@ jobs:
             startGroup "Build coqdoc"
               make coqdoc
             endGroup
+            startGroup "Build report"
+              make docs/report/main.pdf
+            endGroup
 
       - name: Revert Coq user permissions
         # to avoid a warning at cleanup time
@@ -43,9 +47,10 @@ jobs:
 
       - name: Copy HTML and CSS and JavaScript
         run: |
-          mkdir -p public/docs
+          mkdir -p public/docs/report
           cp resources/index.html public/
           cp -r docs/coqdoc public/docs
+          cp docs/report/main.pdf public/docs/report
 
       - name: Deploy to GitHub pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
