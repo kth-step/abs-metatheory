@@ -1,6 +1,7 @@
 Makefile.coq
 Makefile.coq.conf
 _build
+docs/coqdoc
 *~
 *.d
 *.aux
@@ -16,4 +17,4 @@ _build
 *.log
 .lia.cache
 .coq-native
-doc/report/main.tex
+docs/report/main.tex
