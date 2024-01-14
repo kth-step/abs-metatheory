@@ -375,7 +375,7 @@
 %            correctly to their pages where they are at instead of always at
 %            page 1. Per bug reports from a couple of users and a suggestion by
 %            Uwe Pfeiffer.
-\RequirePackage[bottom]{footmisc}
+%\RequirePackage[bottom]{footmisc}
 
 % TOC/thumbnail LHS preview in the PDFs as well as active URLs and other cross-refs
 % Newer versions of hyperref declare a4paper or letterpaper as obsolete and issue warnings

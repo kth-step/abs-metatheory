@@ -18,8 +18,6 @@
 \newtheorem*{definition}{Definition}
 \newtheorem*{remark}{Remark}
 
-\include{abs_defs}
-
 \renewcommand{\ttdefault}{pcr}
 
 \title{Definition and Formal Metatheory of ABS}
@@ -32,6 +30,8 @@
 \titlerunning{Definition and Formal Metatheory of ABS}
 
 \begin{document}
+
+\include{abs_defs}
 
 \maketitle
 
