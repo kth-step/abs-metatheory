@@ -36,7 +36,7 @@
 \expandafter\@tempa\@currnamestack{}{}{}\@nil
 \ifx\@classname\@empty \edef\@classname{\@currname}\fi
 
-\RequirePackage{xcolor}
+%\RequirePackage{xcolor}
 
 %
 % Debug
@@ -379,13 +379,14 @@
 
 % TOC/thumbnail LHS preview in the PDFs as well as active URLs and other cross-refs
 % Newer versions of hyperref declare a4paper or letterpaper as obsolete and issue warnings
-\definecolor{linkcolor}{RGB}{170,0,0} % aa0000
-\definecolor{citecolor}{RGB}{44,160,46} % 2ca02d
-\definecolor{urlcolor}{RGB}{0,51,153} % 003399
-\RequirePackage[linktocpage,pdfcreator=easychair.cls-3.4,colorlinks=True,urlcolor=urlcolor,citecolor=citecolor,linkcolor=linkcolor]{hyperref}
+%\definecolor{linkcolor}{RGB}{170,0,0} % aa0000
+%\definecolor{citecolor}{RGB}{44,160,46} % 2ca02d
+%\definecolor{urlcolor}{RGB}{0,51,153} % 003399
+%\RequirePackage[linktocpage,pdfcreator=easychair.cls-3.4,colorlinks=True,urlcolor=urlcolor,citecolor=citecolor,linkcolor=linkcolor]{hyperref}
+\RequirePackage[linktocpage,pdfcreator=easychair.cls-3.4,colorlinks=False]{hyperref}
 
 % Traditional graphics processing
-\RequirePackage{graphicx}
+%\RequirePackage{graphicx}
 %\RequirePackage{pdflscape}
 %\RequirePackage{lscape}
 
