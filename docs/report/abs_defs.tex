@@ -28,190 +28,110 @@
 \newcommand{\ottmetavars}{
 \ottmetavartabular{
  $ \ottmv{i} ,\, \ottmv{j} ,\, \ottmv{n} $ & \ottcom{index variables (subscripts)} \\
- $ \ottmv{N} $ & \ottcom{uninterpreted type name} \\
- $ \ottmv{D} $ & \ottcom{data type name} \\
- $ \ottmv{Co} $ & \ottcom{data type constructor name} \\
  $ \ottmv{fn} $ & \ottcom{function name} \\
  $ \ottmv{x} ,\, \ottmv{y} $ & \ottcom{variable} \\
 }}
 
 \newcommand{\ottT}{
 \ottrulehead{\ottnt{T}}{::=}{\ottcom{ground type}}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{B}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottmv{D}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottmv{D}  \langle  \ottnt{T_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{T_{\ottmv{n}}}  \rangle}{}{}{}{}}
+\ottfirstprodline{|}{\ottnt{B}}{}{}{}{}}
 
 \newcommand{\ottB}{
 \ottrulehead{\ottnt{B}}{::=}{\ottcom{basic type}}\ottprodnewline
 \ottfirstprodline{|}{\mathsf{Bool}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathsf{Int}}{}{}{}{}}
 
-\newcommand{\ottA}{
-\ottrulehead{\ottnt{A}}{::=}{\ottcom{type}}\ottprodnewline
-\ottfirstprodline{|}{\ottmv{N}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{T}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottmv{D}  \langle  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}}  \rangle}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{A} \, \sigma} {\textsf{M}}{}{}{}}
-
-\newcommand{\ottCons}{
-\ottrulehead{\ottnt{Cons}}{::=}{\ottcom{constructor}}\ottprodnewline
-\ottfirstprodline{|}{\ottmv{Co}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottmv{Co}  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}}  \ottsym{)}}{}{}{}{}}
-
-\newcommand{\ottDd}{
-\ottrulehead{\ottnt{Dd}}{::=}{\ottcom{datatype definition}}\ottprodnewline
-\ottfirstprodline{|}{\ottkw{data} \, \ottmv{D}  \ottsym{=}  \ottnt{Cons_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}} \, ... \, \ottsym{\mbox{$\mid$}}  \ottnt{Cons_{\ottmv{n}}}  \ottsym{;}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottkw{data} \, \ottmv{D}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{i}}}  \rangle  \ottsym{=}  \ottnt{Cons_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}} \, ... \, \ottsym{\mbox{$\mid$}}  \ottnt{Cons_{\ottmv{j}}}  \ottsym{;}}{}{}{}{}}
-
 \newcommand{\ottF}{
 \ottrulehead{\ottnt{F}}{::=}{\ottcom{function definition}}\ottprodnewline
-\ottfirstprodline{|}{\ottkw{def} \, \ottnt{A} \, \ottmv{fn}  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}} \, \ottmv{x_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}} \, \ottmv{x_{\ottmv{n}}}  \ottsym{)}  \ottsym{=}  \ottnt{e}  \ottsym{;}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottkw{def} \, \ottnt{A} \, \ottmv{fn}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{i}}}  \rangle  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}} \, \ottmv{x_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{j}}} \, \ottmv{x_{\ottmv{j}}}  \ottsym{)}  \ottsym{=}  \ottnt{e}  \ottsym{;}}{}{}{}{}}
+\ottfirstprodline{|}{\ottkw{def} \, \ottnt{T} \, \ottmv{fn}  \ottsym{(}  \ottnt{T_{{\mathrm{1}}}} \, \ottmv{x_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{T_{\ottmv{n}}} \, \ottmv{x_{\ottmv{n}}}  \ottsym{)}  \ottsym{=}  \ottnt{e}  \ottsym{;}}{}{}{}{}}
 
 \newcommand{\ottb}{
-\ottrulehead{\ottnt{b}}{::=}{\ottcom{boolean}}}
+\ottrulehead{\ottnt{b}}{::=}{\ottcom{boolean}}\ottprodnewline
+\ottfirstprodline{|}{\mathrm{True}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathrm{False}} {\textsf{M}}{}{}{}}
 
 \newcommand{\otte}{
 \ottrulehead{\ottnt{e}}{::=}{\ottcom{expression}}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{b}}{}{}{}{\ottcom{boolean expression}}\ottprodnewline
 \ottprodline{|}{\ottmv{x}}{}{}{}{\ottcom{variable}}\ottprodnewline
-\ottprodline{|}{\ottnt{t}}{}{}{}{\ottcom{ground term}}\ottprodnewline
-\ottprodline{|}{\ottmv{Co}}{}{}{}{\ottcom{constructor}}\ottprodnewline
-\ottprodline{|}{\ottmv{Co}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{n}}}  \ottsym{)}}{}{}{}{\ottcom{constructor with parameters}}\ottprodnewline
-\ottprodline{|}{\ottmv{fn}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{n}}}  \ottsym{)}}{}{}{}{\ottcom{function call}}\ottprodnewline
-\ottprodline{|}{\ottnt{e} \, \sigma} {\textsf{M}}{}{}{}}
-
-\newcommand{\ottt}{
-\ottrulehead{\ottnt{t}}{::=}{\ottcom{term}}\ottprodnewline
-\ottfirstprodline{|}{\ottmv{Co}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottmv{Co}  \ottsym{(}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{t_{\ottmv{n}}}  \ottsym{)}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottkw{null}}{}{}{}{}}
+\ottprodline{|}{\ottmv{fn}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{n}}}  \ottsym{)}}{}{}{}{\ottcom{function call}}}
 
 \newcommand{\ottsig}{
 \ottrulehead{\ottnt{sig}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}}  \rightarrow  \ottnt{A}}{}{}{}{}}
+\ottfirstprodline{|}{\ottnt{T_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{T_{\ottmv{n}}}  \rightarrow  \ottnt{T}}{}{}{}{}}
 
 \newcommand{\ottctxv}{
 \ottrulehead{\ottnt{ctxv}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{A}}{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{\ottnt{T}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sig}}{}{}{}{}}
 
 \newcommand{\ottG}{
 \ottrulehead{\Gamma}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Gamma  \ottsym{[}  \ottmv{x_{{\mathrm{1}}}}  \mapsto  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{x_{\ottmv{n}}}  \mapsto  \ottnt{A_{\ottmv{n}}}  \ottsym{]}} {\textsf{M}}{}{}{}}
-
-\newcommand{\ottnsubst}{
-\ottrulehead{\sigma}{::=}{}}
-
-\newcommand{\ottxsubst}{
-\ottrulehead{\sigma}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottsym{[}  \ottmv{x_{{\mathrm{1}}}}  \mapsto  \ottmv{y_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{x_{\ottmv{n}}}  \mapsto  \ottmv{y_{\ottmv{n}}}  \ottsym{]}} {\textsf{M}}{}{}{}}
-
-\newcommand{\otttsubst}{
-\ottrulehead{\sigma}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\sigma  \ottsym{[}  \ottmv{y_{{\mathrm{1}}}}  \mapsto  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{y_{\ottmv{n}}}  \mapsto  \ottnt{t_{\ottmv{n}}}  \ottsym{]}} {\textsf{M}}{}{}{}}
+\ottfirstprodline{|}{\Gamma  \ottsym{[}  \ottmv{x_{{\mathrm{1}}}}  \mapsto  \ottnt{T_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{x_{\ottmv{n}}}  \mapsto  \ottnt{T_{\ottmv{n}}}  \ottsym{]}} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{ \Rightarrow }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \{ }{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{ \{ }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathsf{Bool} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathsf{Int} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \langle }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \rangle }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrm{True} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrm{False} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \leadsto }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \vdash }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mapsto }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \rightarrow }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \mathrm{tmatch} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \mathrm{fresh} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \mathrm{vars} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \subseteq }{}{}{}{}}
+\ottprodline{|}{ \rightarrow }{}{}{}{}}
 
 \newcommand{\ottformula}{
 \ottrulehead{\ottnt{formula}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{judgement}}{}{}{}{\ottcom{judgment}}\ottprodnewline
 \ottprodline{|}{\ottnt{formula_{{\mathrm{1}}}} \quad ... \quad \ottnt{formula_{\ottmv{n}}}}{}{}{}{\ottcom{conjunction of formulas}}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{(}  \ottmv{x}  \ottsym{)}  \ottsym{=}  \ottnt{A}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{(}  \ottmv{Co}  \ottsym{)}  \ottsym{=}  \ottnt{sig}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{(}  \ottmv{fn}  \ottsym{)}  \ottsym{=}  \ottnt{sig}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\sigma  \ottsym{(}  \ottmv{x}  \ottsym{)}  \ottsym{=}  \ottnt{t}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathrm{tmatch} \, \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{i}}}  \ottsym{,}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{j}}}  \ottsym{,}  \sigma  \ottsym{)}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathrm{fresh} \, \ottsym{(}  \ottmv{y_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{y_{\ottmv{n}}}  \ottsym{,}  \ottnt{e}  \ottsym{)}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottkw{wt} \, \ottsym{(}  \Gamma  \ottsym{,}  \sigma  \ottsym{)}} {\textsf{M}}{}{}{}}
+\ottprodline{|}{\Gamma  \ottsym{(}  \ottmv{x}  \ottsym{)}  \ottsym{=}  \ottnt{T}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  \ottsym{(}  \ottmv{fn}  \ottsym{)}  \ottsym{=}  \ottnt{sig}} {\textsf{M}}{}{}{}}
 
-\newcommand{\ottfunctionalXXwellXXformedness}{
-\ottrulehead{\ottnt{functional\_well\_formedness}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Gamma  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}}{}{}{}{\ottcom{well-formed expression}}\ottprodnewline
-\ottprodline{|}{\Gamma  \vdash  \ottnt{Cons}  \ottsym{:}  \ottnt{A}}{}{}{}{\ottcom{well-formed cons}}\ottprodnewline
-\ottprodline{|}{\Gamma  \vdash  \ottnt{Dd}}{}{}{}{\ottcom{well-formed data definition}}\ottprodnewline
-\ottprodline{|}{\Gamma  \vdash  \ottnt{F}}{}{}{}{\ottcom{well-formed function declaration}}\ottprodnewline
-\ottprodline{|}{\Gamma  \vdash  \sigma}{}{}{}{\ottcom{well-formed term substitution}}}
-
-\newcommand{\ottfunctionalXXevaluation}{
-\ottrulehead{\ottnt{functional\_evaluation}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{F_{{\mathrm{1}}}} \, ... \, \ottnt{F_{\ottmv{n}}}  \ottsym{,}  \sigma  \vdash  \ottnt{e}  \leadsto  \sigma'  \vdash  \ottnt{e'}}{}{}{}{\ottcom{expression evaluation}}}
+\newcommand{\ottfunctionalXXwellXXtyping}{
+\ottrulehead{\ottnt{functional\_well\_typing}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\Gamma  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{T}}{}{}{}{\ottcom{well-typed expression}}\ottprodnewline
+\ottprodline{|}{\Gamma  \vdash  \ottnt{F}}{}{}{}{\ottcom{well-typed function declaration}}}
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{functional\_well\_formedness}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{functional\_evaluation}}{}{}{}{}}
+\ottfirstprodline{|}{\ottnt{functional\_well\_typing}}{}{}{}{}}
 
 \newcommand{\ottuserXXsyntax}{
 \ottrulehead{\ottnt{user\_syntax}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottmv{i}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottmv{N}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottmv{D}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottmv{Co}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottmv{fn}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottmv{x}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{T}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{B}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{A}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{Cons}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{Dd}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{F}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{b}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{e}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{t}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sig}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{ctxv}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\Gamma}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\sigma}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\sigma}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\sigma}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{formula}}{}{}{}{}}
 
 \newcommand{\ottgrammar}{\ottgrammartabular{
 \ottT\ottinterrule
 \ottB\ottinterrule
-\ottA\ottinterrule
-\ottCons\ottinterrule
-\ottDd\ottinterrule
 \ottF\ottinterrule
 \ottb\ottinterrule
 \otte\ottinterrule
-\ottt\ottinterrule
 \ottsig\ottinterrule
 \ottctxv\ottinterrule
 \ottG\ottinterrule
-\ottnsubst\ottinterrule
-\ottxsubst\ottinterrule
-\otttsubst\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
-\ottfunctionalXXwellXXformedness\ottinterrule
-\ottfunctionalXXevaluation\ottinterrule
+\ottfunctionalXXwellXXtyping\ottinterrule
 \ottjudgement\ottinterrule
 \ottuserXXsyntax\ottafterlastrule
 }}
 
 % defnss
-% defns functional_well_formedness
+% defns functional_well_typing
 %% defn e
 \newcommand{\ottdruletXXbool}[1]{\ottdrule[#1]{%
 }{
@@ -220,196 +140,47 @@
 }}
 
 
-\newcommand{\ottdruletXXnull}[1]{\ottdrule[#1]{%
-}{
-\Gamma  \vdash  \ottkw{null}  \ottsym{:}  \ottnt{A}}{%
-{\ottdrulename{t\_null}}{}%
-}}
-
-
 \newcommand{\ottdruletXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{(}  \ottmv{x}  \ottsym{)}  \ottsym{=}  \ottnt{A}}%
+\ottpremise{\Gamma  \ottsym{(}  \ottmv{x}  \ottsym{)}  \ottsym{=}  \ottnt{T}}%
 }{
-\Gamma  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}}{%
+\Gamma  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{T}}{%
 {\ottdrulename{t\_var}}{}%
 }}
 
 
 \newcommand{\ottdruletXXfuncXXexpr}[1]{\ottdrule[#1]{%
-\ottpremise{\mathrm{tmatch} \, \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{i}}}  \ottsym{,}  \ottnt{A'_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A'_{\ottmv{j}}}  \ottsym{,}  \sigma  \ottsym{)}}%
-\ottpremise{\Gamma  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{A'_{{\mathrm{1}}}} \quad ... \quad \Gamma  \vdash  \ottnt{e_{\ottmv{j}}}  \ottsym{:}  \ottnt{A'_{\ottmv{j}}}}%
-\ottpremise{\Gamma  \ottsym{(}  \ottmv{fn}  \ottsym{)}  \ottsym{=}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{i}}}  \rightarrow  \ottnt{A}}%
+\ottpremise{\Gamma  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{T_{{\mathrm{1}}}} \quad ... \quad \Gamma  \vdash  \ottnt{e_{\ottmv{n}}}  \ottsym{:}  \ottnt{T_{\ottmv{n}}}}%
+\ottpremise{\Gamma  \ottsym{(}  \ottmv{fn}  \ottsym{)}  \ottsym{=}  \ottnt{T_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{T_{\ottmv{n}}}  \rightarrow  \ottnt{T}}%
 }{
-\Gamma  \vdash  \ottmv{fn}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{j}}}  \ottsym{)}  \ottsym{:}  \ottnt{A} \, \sigma}{%
+\Gamma  \vdash  \ottmv{fn}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{n}}}  \ottsym{)}  \ottsym{:}  \ottnt{T}}{%
 {\ottdrulename{t\_func\_expr}}{}%
 }}
 
-
-\newcommand{\ottdruletXXconsXXexpr}[1]{\ottdrule[#1]{%
-\ottpremise{\mathrm{tmatch} \, \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{i}}}  \ottsym{,}  \ottnt{A'_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A'_{\ottmv{j}}}  \ottsym{,}  \sigma  \ottsym{)}}%
-\ottpremise{\Gamma  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{A'_{{\mathrm{1}}}} \quad ... \quad \Gamma  \vdash  \ottnt{e_{\ottmv{j}}}  \ottsym{:}  \ottnt{A'_{\ottmv{j}}}}%
-\ottpremise{\Gamma  \ottsym{(}  \ottmv{Co}  \ottsym{)}  \ottsym{=}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{i}}}  \rightarrow  \ottmv{D}}%
-}{
-\Gamma  \vdash  \ottmv{Co}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{j}}}  \ottsym{)}  \ottsym{:}  \ottmv{D}}{%
-{\ottdrulename{t\_cons\_expr}}{}%
-}}
-
-
-\newcommand{\ottdruletXXconsXXexprXXparam}[1]{\ottdrule[#1]{%
-\ottpremise{\mathrm{tmatch} \, \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{i}}}  \ottsym{,}  \ottnt{A'_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A'_{\ottmv{j}}}  \ottsym{,}  \sigma  \ottsym{)}}%
-\ottpremise{\Gamma  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{A'_{{\mathrm{1}}}} \quad ... \quad \Gamma  \vdash  \ottnt{e_{\ottmv{j}}}  \ottsym{:}  \ottnt{A'_{\ottmv{j}}}}%
-\ottpremise{\Gamma  \ottsym{(}  \ottmv{Co}  \ottsym{)}  \ottsym{=}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{i}}}  \rightarrow  \ottmv{D}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{n}}}  \rangle}%
-}{
-\Gamma  \vdash  \ottmv{Co}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{j}}}  \ottsym{)}  \ottsym{:}  \ottmv{D}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{n}}}  \rangle \, \sigma}{%
-{\ottdrulename{t\_cons\_expr\_param}}{}%
-}}
-
-\newcommand{\ottdefntXXe}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}$}{\ottcom{well-formed expression}}
+\newcommand{\ottdefntXXe}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{T}$}{\ottcom{well-typed expression}}
 \ottusedrule{\ottdruletXXbool{}}
-\ottusedrule{\ottdruletXXnull{}}
 \ottusedrule{\ottdruletXXvar{}}
 \ottusedrule{\ottdruletXXfuncXXexpr{}}
-\ottusedrule{\ottdruletXXconsXXexpr{}}
-\ottusedrule{\ottdruletXXconsXXexprXXparam{}}
-\end{ottdefnblock}}
-
-%% defn cons
-\newcommand{\ottdruletXXconsXXdecl}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{(}  \ottmv{Co}  \ottsym{)}  \ottsym{=}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}}  \rightarrow  \ottmv{D}}%
-}{
-\Gamma  \vdash  \ottmv{Co}  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}}  \ottsym{)}  \ottsym{:}  \ottmv{D}}{%
-{\ottdrulename{t\_cons\_decl}}{}%
-}}
-
-
-\newcommand{\ottdruletXXconsXXdeclXXparam}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{(}  \ottmv{Co}  \ottsym{)}  \ottsym{=}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{i}}}  \rightarrow  \ottmv{D}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{j}}}  \rangle}%
-}{
-\Gamma  \vdash  \ottmv{Co}  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{i}}}  \ottsym{)}  \ottsym{:}  \ottmv{D}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{j}}}  \rangle}{%
-{\ottdrulename{t\_cons\_decl\_param}}{}%
-}}
-
-\newcommand{\ottdefntXXcons}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{Cons}  \ottsym{:}  \ottnt{A}$}{\ottcom{well-formed cons}}
-\ottusedrule{\ottdruletXXconsXXdecl{}}
-\ottusedrule{\ottdruletXXconsXXdeclXXparam{}}
-\end{ottdefnblock}}
-
-%% defn dd
-\newcommand{\ottdruletXXdataXXdecl}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash  \ottnt{Cons_{{\mathrm{1}}}}  \ottsym{:}  \ottmv{D} \quad ... \quad \Gamma  \vdash  \ottnt{Cons_{\ottmv{n}}}  \ottsym{:}  \ottmv{D}}%
-}{
-\Gamma  \vdash  \ottkw{data} \, \ottmv{D}  \ottsym{=}  \ottnt{Cons_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}} \, ... \, \ottsym{\mbox{$\mid$}}  \ottnt{Cons_{\ottmv{n}}}  \ottsym{;}}{%
-{\ottdrulename{t\_data\_decl}}{}%
-}}
-
-
-\newcommand{\ottdruletXXdataXXdeclXXparam}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash  \ottnt{Cons_{{\mathrm{1}}}}  \ottsym{:}  \ottmv{D}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{i}}}  \rangle \quad ... \quad \Gamma  \vdash  \ottnt{Cons_{\ottmv{j}}}  \ottsym{:}  \ottmv{D}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{i}}}  \rangle}%
-}{
-\Gamma  \vdash  \ottkw{data} \, \ottmv{D}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{i}}}  \rangle  \ottsym{=}  \ottnt{Cons_{{\mathrm{1}}}}  \ottsym{\mbox{$\mid$}} \, ... \, \ottsym{\mbox{$\mid$}}  \ottnt{Cons_{\ottmv{j}}}  \ottsym{;}}{%
-{\ottdrulename{t\_data\_decl\_param}}{}%
-}}
-
-\newcommand{\ottdefntXXdd}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{Dd}$}{\ottcom{well-formed data definition}}
-\ottusedrule{\ottdruletXXdataXXdecl{}}
-\ottusedrule{\ottdruletXXdataXXdeclXXparam{}}
 \end{ottdefnblock}}
 
 %% defn F
 \newcommand{\ottdruletXXfuncXXdecl}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{(}  \ottmv{fn}  \ottsym{)}  \ottsym{=}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}}  \rightarrow  \ottnt{A}}%
-\ottpremise{\Gamma  \ottsym{[}  \ottmv{x_{{\mathrm{1}}}}  \mapsto  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{x_{\ottmv{n}}}  \mapsto  \ottnt{A_{\ottmv{n}}}  \ottsym{]}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}}%
+\ottpremise{\Gamma  \ottsym{(}  \ottmv{fn}  \ottsym{)}  \ottsym{=}  \ottnt{T_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{T_{\ottmv{n}}}  \rightarrow  \ottnt{T}}%
+\ottpremise{\Gamma  \ottsym{[}  \ottmv{x_{{\mathrm{1}}}}  \mapsto  \ottnt{T_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{x_{\ottmv{n}}}  \mapsto  \ottnt{T_{\ottmv{n}}}  \ottsym{]}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{T}}%
 }{
-\Gamma  \vdash  \ottkw{def} \, \ottnt{A} \, \ottmv{fn}  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}} \, \ottmv{x_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}} \, \ottmv{x_{\ottmv{n}}}  \ottsym{)}  \ottsym{=}  \ottnt{e}  \ottsym{;}}{%
+\Gamma  \vdash  \ottkw{def} \, \ottnt{T} \, \ottmv{fn}  \ottsym{(}  \ottnt{T_{{\mathrm{1}}}} \, \ottmv{x_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{T_{\ottmv{n}}} \, \ottmv{x_{\ottmv{n}}}  \ottsym{)}  \ottsym{=}  \ottnt{e}  \ottsym{;}}{%
 {\ottdrulename{t\_func\_decl}}{}%
 }}
 
-
-\newcommand{\ottdruletXXfuncXXdeclXXparam}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{(}  \ottmv{fn}  \ottsym{)}  \ottsym{=}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}}  \rightarrow  \ottnt{A}}%
-\ottpremise{\Gamma  \ottsym{[}  \ottmv{x_{{\mathrm{1}}}}  \mapsto  \ottnt{A_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{x_{\ottmv{n}}}  \mapsto  \ottnt{A_{\ottmv{n}}}  \ottsym{]}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A}}%
-}{
-\Gamma  \vdash  \ottkw{def} \, \ottnt{A} \, \ottmv{fn}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{i}}}  \rangle  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}} \, \ottmv{x_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}} \, \ottmv{x_{\ottmv{n}}}  \ottsym{)}  \ottsym{=}  \ottnt{e}  \ottsym{;}}{%
-{\ottdrulename{t\_func\_decl\_param}}{}%
-}}
-
-\newcommand{\ottdefntXXF}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{F}$}{\ottcom{well-formed function declaration}}
+\newcommand{\ottdefntXXF}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{F}$}{\ottcom{well-typed function declaration}}
 \ottusedrule{\ottdruletXXfuncXXdecl{}}
-\ottusedrule{\ottdruletXXfuncXXdeclXXparam{}}
-\end{ottdefnblock}}
-
-%% defn tsubst
-\newcommand{\ottdruletXXtsubstXXwt}[1]{\ottdrule[#1]{%
-\ottpremise{\ottkw{wt} \, \ottsym{(}  \Gamma  \ottsym{,}  \sigma  \ottsym{)}}%
-}{
-\Gamma  \vdash  \sigma}{%
-{\ottdrulename{t\_tsubst\_wt}}{}%
-}}
-
-\newcommand{\ottdefntXXtsubst}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \sigma$}{\ottcom{well-formed term substitution}}
-\ottusedrule{\ottdruletXXtsubstXXwt{}}
 \end{ottdefnblock}}
 
 
-\newcommand{\ottdefnsfunctionalXXwellXXformedness}{
-\ottdefntXXe{}\ottdefntXXcons{}\ottdefntXXdd{}\ottdefntXXF{}\ottdefntXXtsubst{}}
-
-% defns functional_evaluation
-%% defn tsubst_e
-\newcommand{\ottdruleredXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \ottsym{(}  \ottmv{x}  \ottsym{)}  \ottsym{=}  \ottnt{t}}%
-}{
-\ottnt{F_{{\mathrm{1}}}} \, ... \, \ottnt{F_{\ottmv{n}}}  \ottsym{,}  \sigma  \vdash  \ottmv{x}  \leadsto  \sigma  \vdash  \ottnt{t}}{%
-{\ottdrulename{red\_var}}{}%
-}}
-
-
-\newcommand{\ottdruleredXXcons}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{F_{{\mathrm{1}}}} \, ... \, \ottnt{F_{\ottmv{n}}}  \ottsym{,}  \sigma  \vdash  \ottnt{e}  \leadsto  \sigma'  \vdash  \ottnt{e'}}%
-}{
-\ottnt{F_{{\mathrm{1}}}} \, ... \, \ottnt{F_{\ottmv{n}}}  \ottsym{,}  \sigma  \vdash  \ottmv{Co}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{i}}}  \ottsym{,}  \ottnt{e}  \ottsym{,}  \ottnt{e'_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e'_{\ottmv{j}}}  \ottsym{)}  \leadsto  \sigma'  \vdash  \ottmv{Co}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{i}}}  \ottsym{,}  \ottnt{e'}  \ottsym{,}  \ottnt{e'_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e'_{\ottmv{j}}}  \ottsym{)}}{%
-{\ottdrulename{red\_cons}}{}%
-}}
-
-
-\newcommand{\ottdruleredXXfunXXexp}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{F_{{\mathrm{1}}}} \, ... \, \ottnt{F_{\ottmv{n}}}  \ottsym{,}  \sigma  \vdash  \ottnt{e}  \leadsto  \sigma'  \vdash  \ottnt{e'}}%
-}{
-\ottnt{F_{{\mathrm{1}}}} \, ... \, \ottnt{F_{\ottmv{n}}}  \ottsym{,}  \sigma  \vdash  \ottmv{fn}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{i}}}  \ottsym{,}  \ottnt{e}  \ottsym{,}  \ottnt{e'_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e'_{\ottmv{j}}}  \ottsym{)}  \leadsto  \sigma'  \vdash  \ottmv{fn}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{i}}}  \ottsym{,}  \ottnt{e'}  \ottsym{,}  \ottnt{e'_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e'_{\ottmv{j}}}  \ottsym{)}}{%
-{\ottdrulename{red\_fun\_exp}}{}%
-}}
-
-
-\newcommand{\ottdruleredXXfunXXground}[1]{\ottdrule[#1]{%
-\ottpremise{\mathrm{fresh} \, \ottsym{(}  \ottmv{y_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{y_{\ottmv{n}}}  \ottsym{,}  \ottnt{e}  \ottsym{)}}%
-}{
-\ottnt{F_{{\mathrm{1}}}} \, ... \, \ottnt{F_{\ottmv{i}}} \, \ottkw{def} \, \ottnt{A} \, \ottmv{fn}  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}} \, \ottmv{x_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}} \, \ottmv{x_{\ottmv{n}}}  \ottsym{)}  \ottsym{=}  \ottnt{e}  \ottsym{;} \, \ottnt{F'_{{\mathrm{1}}}} \, ... \, \ottnt{F'_{\ottmv{j}}}  \ottsym{,}  \sigma  \vdash  \ottmv{fn}  \ottsym{(}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{t_{\ottmv{n}}}  \ottsym{)}  \leadsto  \sigma  \ottsym{[}  \ottmv{y_{{\mathrm{1}}}}  \mapsto  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{y_{\ottmv{n}}}  \mapsto  \ottnt{t_{\ottmv{n}}}  \ottsym{]}  \vdash  \ottnt{e} \, \ottsym{[}  \ottmv{x_{{\mathrm{1}}}}  \mapsto  \ottmv{y_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{x_{\ottmv{n}}}  \mapsto  \ottmv{y_{\ottmv{n}}}  \ottsym{]}}{%
-{\ottdrulename{red\_fun\_ground}}{}%
-}}
-
-
-\newcommand{\ottdruleredXXfunXXgroundXXparam}[1]{\ottdrule[#1]{%
-\ottpremise{\mathrm{fresh} \, \ottsym{(}  \ottmv{y_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{y_{\ottmv{n}}}  \ottsym{,}  \ottnt{e}  \ottsym{)}}%
-}{
-\ottnt{F_{{\mathrm{1}}}} \, ... \, \ottnt{F_{\ottmv{i}}} \, \ottkw{def} \, \ottnt{A} \, \ottmv{fn}  \langle  \ottmv{N_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{N_{\ottmv{i}}}  \rangle  \ottsym{(}  \ottnt{A_{{\mathrm{1}}}} \, \ottmv{x_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{A_{\ottmv{n}}} \, \ottmv{x_{\ottmv{n}}}  \ottsym{)}  \ottsym{=}  \ottnt{e}  \ottsym{;} \, \ottnt{F'_{{\mathrm{1}}}} \, ... \, \ottnt{F'_{\ottmv{j}}}  \ottsym{,}  \sigma  \vdash  \ottmv{fn}  \ottsym{(}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{t_{\ottmv{n}}}  \ottsym{)}  \leadsto  \sigma  \ottsym{[}  \ottmv{y_{{\mathrm{1}}}}  \mapsto  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{y_{\ottmv{n}}}  \mapsto  \ottnt{t_{\ottmv{n}}}  \ottsym{]}  \vdash  \ottnt{e} \, \ottsym{[}  \ottmv{x_{{\mathrm{1}}}}  \mapsto  \ottmv{y_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{x_{\ottmv{n}}}  \mapsto  \ottmv{y_{\ottmv{n}}}  \ottsym{]}}{%
-{\ottdrulename{red\_fun\_ground\_param}}{}%
-}}
-
-\newcommand{\ottdefnredXXtsubstXXe}[1]{\begin{ottdefnblock}[#1]{$\ottnt{F_{{\mathrm{1}}}} \, ... \, \ottnt{F_{\ottmv{n}}}  \ottsym{,}  \sigma  \vdash  \ottnt{e}  \leadsto  \sigma'  \vdash  \ottnt{e'}$}{\ottcom{expression evaluation}}
-\ottusedrule{\ottdruleredXXvar{}}
-\ottusedrule{\ottdruleredXXcons{}}
-\ottusedrule{\ottdruleredXXfunXXexp{}}
-\ottusedrule{\ottdruleredXXfunXXground{}}
-\ottusedrule{\ottdruleredXXfunXXgroundXXparam{}}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsfunctionalXXevaluation}{
-\ottdefnredXXtsubstXXe{}}
+\newcommand{\ottdefnsfunctionalXXwellXXtyping}{
+\ottdefntXXe{}\ottdefntXXF{}}
 
 \newcommand{\ottdefnss}{
-\ottdefnsfunctionalXXwellXXformedness
-\ottdefnsfunctionalXXevaluation
+\ottdefnsfunctionalXXwellXXtyping
 }
 
 \newcommand{\ottall}{\ottmetavars\\[0pt]

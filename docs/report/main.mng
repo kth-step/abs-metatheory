@@ -4,7 +4,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
-%\usepackage{supertabular}
+\usepackage{supertabular}
 %\usepackage{color}
 \usepackage{listings}
 %\usepackage{extpfeil}
@@ -50,17 +50,36 @@ Introduction goes here.
 
 In this section, we define the abstract syntax of ABS.
 
-%\ottgrammartabular{\ottres\ottinterrule}
+\ottgrammartabular{\ottT\ottinterrule}
 
-%\ottgrammartabular{\otte\ottinterrule}
+\ottgrammartabular{\ottB\ottinterrule}
 
-%\ottgrammartabular{\otto\ottinterrule}
+\ottgrammartabular{\ottF\ottinterrule}
 
-%\ottgrammartabular{\otti\ottinterrule}
+\ottgrammartabular{\otte\ottinterrule}
+
+\section{Semantics}
+
+In this section, we define the semantics of ABS.
+
+\subsection{Meta syntax}
+
+\ottgrammartabular{\ottsig\ottinterrule}
+
+\ottgrammartabular{\ottctxv\ottinterrule}
+
+\ottgrammartabular{\ottG\ottinterrule}
+
+\subsection{Typing}
+
+\ottdefntXXe{}
+
+\ottdefntXXF{}
 
 \section{Metatheory}
 \label{sec:metatheory}
-Metatheory goes here.
+
+In this section, we define the metatheory of ABS.
 
 \bibliographystyle{abbrv}
 \bibliography{bib}
