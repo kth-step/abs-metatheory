@@ -45,4 +45,7 @@ make   # or make -j <number-of-cores-on-your-machine>
 
 ## Documentation
 
+- [latest technical report](https://kth-step.github.io/abs-metatheory/docs/report/main.pdf)
+- [latest coqdoc documentation](https://kth-step.github.io/abs-metatheory/docs/coqdoc/toc.html)
+
 See also [ABS Tools](https://github.com/abstools/abstools).
