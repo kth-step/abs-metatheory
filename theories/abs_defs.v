@@ -8,12 +8,14 @@ Require Import Ott.ott_list_core.
 
 Require Export Ascii.
 Require Export String.
+Require Export ZArith.
 
 Require Import FMapList OrderedTypeEx.
 Module Map <: FMapInterface.S := FMapList.Make String_as_OT.
 
-Hint Resolve bool_dec : ott_coq_equality.
-Hint Resolve ascii_dec : ott_coq_equality.
+#[export] Hint Resolve bool_dec : ott_coq_equality.
+#[export] Hint Resolve ascii_dec : ott_coq_equality.
+#[export] Hint Resolve Pos.eq_dec : ott_coq_equality.
 
 (** * ABS Definitions *)
 
@@ -23,24 +25,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_i : ott_coq_equality.
-Definition N : Set := string. (*r uninterpreted type name *)
-Lemma eq_N: forall (x y : N), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_N : ott_coq_equality.
-Definition D : Set := string. (*r data type name *)
-Lemma eq_D: forall (x y : D), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_D : ott_coq_equality.
-Definition Co : Set := string. (*r data type constructor name *)
-Lemma eq_Co: forall (x y : Co), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_Co : ott_coq_equality.
 Definition fn : Set := string. (*r function name *)
 Lemma eq_fn: forall (x y : fn), {x = y} + {x <> y}.
 Proof.
@@ -53,109 +37,46 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_x : ott_coq_equality.
-
-Inductive B : Set :=  (*r basic type *)
- | B_bool : B
- | B_int : B.
+Definition b : Set := bool. (*r boolean *)
+Lemma eq_b: forall (x y : b), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_b : ott_coq_equality.
+Definition z : Set := Z. (*r integer *)
+Lemma eq_z: forall (x y : z), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_z : ott_coq_equality.
 
 Inductive T : Set :=  (*r ground type *)
- | T_basic_type (B5:B)
- | T_d (D5:D)
- | T_d_param (D5:D) (_:list T).
+ | T_bool : T
+ | T_int : T.
 
-Inductive A : Set :=  (*r type *)
- | A_name (N5:N)
- | A_type (T5:T)
- | A_type_param (D5:D) (_:list A).
-
-Inductive t : Set :=  (*r term *)
- | term_co (Co5:Co)
- | term_co_param (Co5:Co) (_:list t)
- | term_null : t.
-
-Definition b : Set := bool.
+Inductive t : Set :=  (*r ground term *)
+ | t_b (b5:b) (*r boolean *)
+ | t_int (z5:z) (*r integer *).
 
 Inductive sig : Set := 
- | sig_sig (_:list A) (A_5:A).
+ | sig_sig (_:list T) (T_5:T).
 
 Inductive e : Set :=  (*r expression *)
- | e_b (b5:b) (*r boolean expression *)
+ | e_t (t5:t) (*r term *)
  | e_var (x5:x) (*r variable *)
- | e_term (t5:t) (*r ground term *)
- | e_co (Co5:Co) (*r constructor *)
- | e_co_param (Co5:Co) (_:list e) (*r constructor with parameters *)
  | e_fn_call (fn5:fn) (_:list e) (*r function call *).
 
-Inductive Cons : Set :=  (*r constructor *)
- | Cons_co (Co5:Co)
- | Cons_co_param (Co5:Co) (_:list A).
-
 Inductive ctxv : Set := 
- | ctxv_A (A5:A)
+ | ctxv_T (T5:T)
  | ctxv_sig (sig5:sig).
 
 Inductive F : Set :=  (*r function definition *)
- | F_fn (A_5:A) (fn5:fn) (_:list (A*x)) (e5:e)
- | F_fn_param (A_5:A) (fn5:fn) (_:list N) (_:list (A*x)) (e5:e).
+ | F_fn (T_5:T) (fn5:fn) (_:list (T*x)) (e5:e).
 
-Definition tsubst : Type := Map.t t.
-
-Inductive Dd : Set :=  (*r datatype definition *)
- | Dd_consl (D5:D) (_:list Cons)
- | Dd_consl_param (D5:D) (_:list N) (_:list Cons).
+Definition s : Type := Map.t t.
 
 Definition G : Type := Map.t ctxv.
-
-Definition nsubst : Type := Map.t A.
-
-Definition xsubst : Type := Map.t x.
 (** induction principles *)
-Section T_rect.
-
-Variables
-  (P_T : T -> Prop)
-  (P_list_T : list T -> Prop).
-
-Hypothesis
-  (H_T_basic_type : forall (B5:B), P_T (T_basic_type B5))
-  (H_T_d : forall (D5:D), P_T (T_d D5))
-  (H_T_d_param : forall (T_list:list T), P_list_T T_list -> forall (D5:D), P_T (T_d_param D5 T_list))
-  (H_list_T_nil : P_list_T nil)
-  (H_list_T_cons : forall (T0:T), P_T T0 -> forall (T_l:list T), P_list_T T_l -> P_list_T (cons T0 T_l)).
-
-Fixpoint T_ott_ind (n:T) : P_T n :=
-  match n as x return P_T x with
-  | (T_basic_type B5) => H_T_basic_type B5
-  | (T_d D5) => H_T_d D5
-  | (T_d_param D5 T_list) => H_T_d_param T_list (((fix T_list_ott_ind (T_l:list T) : P_list_T T_l := match T_l as x return P_list_T x with nil => H_list_T_nil | cons T1 xl => H_list_T_cons T1(T_ott_ind T1)xl (T_list_ott_ind xl) end)) T_list) D5
-end.
-
-End T_rect.
-
-
-Section A_rect.
-
-Variables
-  (P_A : A -> Prop)
-  (P_list_A : list A -> Prop).
-
-Hypothesis
-  (H_A_name : forall (N5:N), P_A (A_name N5))
-  (H_A_type : forall (T5:T), P_A (A_type T5))
-  (H_A_type_param : forall (A_list:list A), P_list_A A_list -> forall (D5:D), P_A (A_type_param D5 A_list))
-  (H_list_A_nil : P_list_A nil)
-  (H_list_A_cons : forall (A0:A), P_A A0 -> forall (A_l:list A), P_list_A A_l -> P_list_A (cons A0 A_l)).
-
-Fixpoint A_ott_ind (n:A) : P_A n :=
-  match n as x return P_A x with
-  | (A_name N5) => H_A_name N5
-  | (A_type T5) => H_A_type T5
-  | (A_type_param D5 A_list) => H_A_type_param A_list (((fix A_list_ott_ind (A_l:list A) : P_list_A A_l := match A_l as x return P_list_A x with nil => H_list_A_nil | cons A1 xl => H_list_A_cons A1(A_ott_ind A1)xl (A_list_ott_ind xl) end)) A_list) D5
-end.
-
-End A_rect.
-
-
 Section e_rect.
 
 Variables
@@ -163,159 +84,52 @@ Variables
   (P_list_e : list e -> Prop).
 
 Hypothesis
-  (H_e_b : forall (b5:b), P_e (e_b b5))
+  (H_e_t : forall (t5:t), P_e (e_t t5))
   (H_e_var : forall (x5:x), P_e (e_var x5))
-  (H_e_term : forall (t5:t), P_e (e_term t5))
-  (H_e_co : forall (Co5:Co), P_e (e_co Co5))
-  (H_e_co_param : forall (e_list:list e), P_list_e e_list -> forall (Co5:Co), P_e (e_co_param Co5 e_list))
   (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fn5:fn), P_e (e_fn_call fn5 e_list))
   (H_list_e_nil : P_list_e nil)
   (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
 
 Fixpoint e_ott_ind (n:e) : P_e n :=
   match n as x return P_e x with
-  | (e_b b5) => H_e_b b5
+  | (e_t t5) => H_e_t t5
   | (e_var x5) => H_e_var x5
-  | (e_term t5) => H_e_term t5
-  | (e_co Co5) => H_e_co Co5
-  | (e_co_param Co5 e_list) => H_e_co_param e_list (((fix e_list_ott_ind (e_l:list e) : P_list_e e_l := match e_l as x return P_list_e x with nil => H_list_e_nil | cons e1 xl => H_list_e_cons e1(e_ott_ind e1)xl (e_list_ott_ind xl) end)) e_list) Co5
-  | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_ind (e_l:list e) : P_list_e e_l := match e_l as x return P_list_e x with nil => H_list_e_nil | cons e2 xl => H_list_e_cons e2(e_ott_ind e2)xl (e_list_ott_ind xl) end)) e_list) fn5
+  | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_ind (e_l:list e) : P_list_e e_l := match e_l as x return P_list_e x with nil => H_list_e_nil | cons e1 xl => H_list_e_cons e1(e_ott_ind e1)xl (e_list_ott_ind xl) end)) e_list) fn5
 end.
 
 End e_rect.
-
-
-Section t_rect.
-
-Variables
-  (P_t : t -> Prop)
-  (P_list_t : list t -> Prop).
-
-Hypothesis
-  (H_term_co : forall (Co5:Co), P_t (term_co Co5))
-  (H_term_co_param : forall (t_list:list t), P_list_t t_list -> forall (Co5:Co), P_t (term_co_param Co5 t_list))
-  (H_term_null : P_t term_null)
-  (H_list_t_nil : P_list_t nil)
-  (H_list_t_cons : forall (t0:t), P_t t0 -> forall (t_l:list t), P_list_t t_l -> P_list_t (cons t0 t_l)).
-
-Fixpoint t_ott_ind (n:t) : P_t n :=
-  match n as x return P_t x with
-  | (term_co Co5) => H_term_co Co5
-  | (term_co_param Co5 t_list) => H_term_co_param t_list (((fix t_list_ott_ind (t_l:list t) : P_list_t t_l := match t_l as x return P_list_t x with nil => H_list_t_nil | cons t1 xl => H_list_t_cons t1(t_ott_ind t1)xl (t_list_ott_ind xl) end)) t_list) Co5
-  | term_null => H_term_null 
-end.
-
-End t_rect.
-
-Fixpoint nsubst_A (A5 : A) (nsubst5 : nsubst) : A :=
-match A5 with
-| A_name N5 as A' => 
-  match Map.find N5 nsubst5 with
-  | Some A6 => A6
-  | None => A'
-  end
-| A_type T5 as A' => A'
-| A_type_param D5 l => A_type_param D5 (map (fun A5 => nsubst_A A5 nsubst5) l)
-end.
-
-Definition nsubst_A_list (A_list : list A) (nsubst5 : nsubst) : list A :=
-map (fun A5 => nsubst_A A5 nsubst5) A_list.
-
-Fixpoint xsubst_e (e5 : e) (xsubst5 : xsubst) : e := 
-match e5 with
-| e_b _ as e' => e'
-| e_var x' as e' => 
-  match Map.find x' xsubst5 with
-  | Some y5 => e_var y5
-  | None => e'
-  end
-| e_term _ as e' => e'
-| e_co _ as e' => e'
-| e_co_param Co5 l => e_co_param Co5 (map (fun e' => xsubst_e e' xsubst5) l)
-| e_fn_call fn5 l => e_fn_call fn5 (map (fun e' => xsubst_e e' xsubst5) l)
-end.
-
-Fixpoint vars_e (e5 : e) : list x := 
-match e5 with
-| e_b _ => nil
-| e_var x' => x' :: nil
-| e_term _ => nil
-| e_co _ => nil
-| e_co_param _ l => fold_right (fun e' l' => vars_e e' ++ l') nil l
-| e_fn_call _ l => fold_right (fun e' l' => vars_e e' ++ l') nil l
-end.
-
 (** definitions *)
 
-(* defns functional_well_formedness *)
-Inductive t_e : G -> e -> A -> Prop :=    (* defn e *)
- | t_bool : forall (G5:G) (b5:b),
-     t_e G5 (e_b b5) (A_type (T_basic_type B_bool))
- | t_null : forall (G5:G) (A5:A),
-     t_e G5 (e_term term_null) A5
- | t_var : forall (G5:G) (x5:x) (A5:A),
-      (Map.find  x5   G5  = Some (ctxv_A  A5 ))  ->
-     t_e G5 (e_var x5) A5
- | t_func_expr : forall (e_A'_list:list (e*A)) (A_list:list A) (G5:G) (fn5:fn) (A_5:A) (nsubst5:nsubst),
-      (nsubst_A_list  A_list   nsubst5  =  (map (fun (pat_:(e*A)) => match pat_ with (e_,A'_) => A'_ end ) e_A'_list) )  ->
-     (forall e_ A'_, In (e_,A'_) (map (fun (pat_: (e*A)) => match pat_ with (e_,A'_) => (e_,A'_) end) e_A'_list) -> (t_e G5 e_ A'_)) ->
-      (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig A_list A_5) ))  ->
-     t_e G5 (e_fn_call fn5 (map (fun (pat_:(e*A)) => match pat_ with (e_,A'_) => e_ end ) e_A'_list))  (nsubst_A  A_5   nsubst5 ) 
- | t_cons_expr : forall (e_A'_list:list (e*A)) (A_list:list A) (G5:G) (Co5:Co) (D5:D) (nsubst5:nsubst),
-      (nsubst_A_list  A_list   nsubst5  =  (map (fun (pat_:(e*A)) => match pat_ with (e_,A'_) => A'_ end ) e_A'_list) )  ->
-     (forall e_ A'_, In (e_,A'_) (map (fun (pat_: (e*A)) => match pat_ with (e_,A'_) => (e_,A'_) end) e_A'_list) -> (t_e G5 e_ A'_)) ->
-      (Map.find  Co5   G5  = Some (ctxv_sig  (sig_sig A_list (A_type (T_d D5))) ))  ->
-     t_e G5 (e_co_param Co5 (map (fun (pat_:(e*A)) => match pat_ with (e_,A'_) => e_ end ) e_A'_list)) (A_type (T_d D5))
- | t_cons_expr_param : forall (e_A'_list:list (e*A)) (A_list:list A) (N_list:list N) (G5:G) (Co5:Co) (D5:D) (nsubst5:nsubst),
-      (nsubst_A_list  A_list   nsubst5  =  (map (fun (pat_:(e*A)) => match pat_ with (e_,A'_) => A'_ end ) e_A'_list) )  ->
-     (forall e_ A'_, In (e_,A'_) (map (fun (pat_: (e*A)) => match pat_ with (e_,A'_) => (e_,A'_) end) e_A'_list) -> (t_e G5 e_ A'_)) ->
-      (Map.find  Co5   G5  = Some (ctxv_sig  (sig_sig A_list (A_type_param D5 (map (fun (N_:N) => (A_name N_)) N_list))) ))  ->
-     t_e G5 (e_co_param Co5 (map (fun (pat_:(e*A)) => match pat_ with (e_,A'_) => e_ end ) e_A'_list))  (nsubst_A  (A_type_param D5 (map (fun (N_:N) => (A_name N_)) N_list))   nsubst5 ) 
-with t_cons : G -> Cons -> A -> Prop :=    (* defn cons *)
- | t_cons_decl : forall (A_list:list A) (G5:G) (Co5:Co) (D5:D),
-      (Map.find  Co5   G5  = Some (ctxv_sig  (sig_sig A_list (A_type (T_d D5))) ))  ->
-     t_cons G5 (Cons_co_param Co5 A_list) (A_type (T_d D5))
- | t_cons_decl_param : forall (N_list:list N) (A_list:list A) (G5:G) (Co5:Co) (D5:D),
-      (Map.find  Co5   G5  = Some (ctxv_sig  (sig_sig A_list (A_type_param D5 (map (fun (N_:N) => (A_name N_)) N_list))) ))  ->
-     t_cons G5 (Cons_co_param Co5 A_list) (A_type_param D5 (map (fun (N_:N) => (A_name N_)) N_list))
-with t_dd : G -> Dd -> Prop :=    (* defn dd *)
- | t_data_decl : forall (Cons_list:list Cons) (G5:G) (D5:D),
-     (forall Cons_, In (Cons_) (map (fun (Cons_ : Cons) => (Cons_)) Cons_list) -> (t_cons G5 Cons_ (A_type (T_d D5)))) ->
-     t_dd G5 (Dd_consl D5 Cons_list)
- | t_data_decl_param : forall (Cons_list:list Cons) (N_list:list N) (G5:G) (D5:D),
-     (forall Cons_, In (Cons_) (map (fun (Cons_ : Cons) => (Cons_)) Cons_list) -> (t_cons G5 Cons_ (A_type_param D5 (map (fun (N_:N) => (A_name N_)) N_list)))) ->
-     t_dd G5 (Dd_consl_param D5 N_list Cons_list)
-with t_F : G -> F -> Prop :=    (* defn F *)
- | t_func_decl : forall (A_x_list:list (A*x)) (G5:G) (A_5:A) (fn5:fn) (e5:e),
-      (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(A*x)) => match pat_ with (A_,x_) => A_ end ) A_x_list) A_5) ))  ->
-     t_e  (fold_right (fun (ax : x * A) (G5 : G) => Map.add (fst ax) (ctxv_A (snd ax)) G5)  G5   (map (fun (pat_:(A*x)) => match pat_ with (A_,x_) => (x_,A_) end ) A_x_list) )  e5 A_5 ->
-     t_F G5 (F_fn A_5 fn5 A_x_list e5)
- | t_func_decl_param : forall (A_x_list:list (A*x)) (N_list:list N) (G5:G) (A_5:A) (fn5:fn) (e5:e),
-      (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(A*x)) => match pat_ with (A_,x_) => A_ end ) A_x_list) A_5) ))  ->
-     t_e  (fold_right (fun (ax : x * A) (G5 : G) => Map.add (fst ax) (ctxv_A (snd ax)) G5)  G5   (map (fun (pat_:(A*x)) => match pat_ with (A_,x_) => (x_,A_) end ) A_x_list) )  e5 A_5 ->
-     t_F G5 (F_fn_param A_5 fn5 N_list A_x_list e5)
-with t_tsubst : G -> tsubst -> Prop :=    (* defn tsubst *)
- | t_tsubst_wt : forall (G5:G) (tsubst5:tsubst),
-      (forall (x5 : x) (t5 : t) (A5 : A), Map.find x5  tsubst5  = Some t5 -> Map.find x5  G5  = Some (ctxv_A A5) -> t_e  G5  (e_term t5) A5)  ->
-     t_tsubst G5 tsubst5.
+(* defns functional_well_typing *)
+Inductive typ_e : G -> e -> T -> Prop :=    (* defn e *)
+ | typ_bool : forall (G5:G) (b5:b),
+     typ_e G5 (e_t (t_b b5)) T_bool
+ | typ_int : forall (G5:G) (z5:z),
+     typ_e G5 (e_t (t_int z5)) T_int
+ | typ_var : forall (G5:G) (x5:x) (T5:T),
+      (Map.find  x5   G5  = Some (ctxv_T  T5 ))  ->
+     typ_e G5 (e_var x5) T5
+ | typ_func_expr : forall (e_T_list:list (e*T)) (G5:G) (fn5:fn) (T_5:T),
+     (forall e_ T_, In (e_,T_) (map (fun (pat_: (e*T)) => match pat_ with (e_,T_) => (e_,T_) end) e_T_list) -> (typ_e G5 e_ T_)) ->
+      (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => T_ end ) e_T_list) T_5) ))  ->
+     typ_e G5 (e_fn_call fn5 (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => e_ end ) e_T_list)) T_5
+with typ_F : G -> F -> Prop :=    (* defn F *)
+ | typ_func_decl : forall (T_x_list:list (T*x)) (G5:G) (T_5:T) (fn5:fn) (e5:e),
+      (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => T_ end ) T_x_list) T_5) ))  ->
+     typ_e  (fold_right (fun (ax : x * T) (G5 : G) => Map.add (fst ax) (ctxv_T (snd ax)) G5)  G5   (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => (x_,T_) end ) T_x_list) )  e5 T_5 ->
+     typ_F G5 (F_fn T_5 fn5 T_x_list e5).
 (** definitions *)
 
 (* defns functional_evaluation *)
-Inductive red_tsubst_e : list F -> tsubst -> e -> tsubst -> e -> Prop :=    (* defn tsubst_e *)
- | red_var : forall (F_list:list F) (tsubst5:tsubst) (x5:x) (t5:t),
-      (Map.find  x5   tsubst5  = Some  t5 )  ->
-     red_tsubst_e F_list tsubst5 (e_var x5) tsubst5 (e_term t5)
- | red_cons : forall (e'_list e_list:list e) (F_list:list F) (tsubst5:tsubst) (Co5:Co) (e_5:e) (tsubst':tsubst) (e':e),
-     red_tsubst_e F_list tsubst5 e_5 tsubst' e' ->
-     red_tsubst_e F_list tsubst5 (e_co_param Co5 ((app e_list (app (cons e_5 nil) (app e'_list nil))))) tsubst' (e_co_param Co5 ((app e_list (app (cons e' nil) (app e'_list nil)))))
- | red_fun_exp : forall (e'_list e_list:list e) (F_list:list F) (tsubst5:tsubst) (fn5:fn) (e_5:e) (tsubst':tsubst) (e':e),
-     red_tsubst_e F_list tsubst5 e_5 tsubst' e' ->
-     red_tsubst_e F_list tsubst5 (e_fn_call fn5 ((app e_list (app (cons e_5 nil) (app e'_list nil))))) tsubst' (e_fn_call fn5 ((app e_list (app (cons e' nil) (app e'_list nil)))))
- | red_fun_ground : forall (A_x_t_y_list:list (A*x*t*x)) (F'_list F_list:list F) (A_5:A) (fn5:fn) (e5:e) (tsubst5:tsubst),
-      (forall y5, In y5  (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => y_ end ) A_x_t_y_list)  -> ~ In y5 (vars_e  e5 ))  ->
-     red_tsubst_e ((app F_list (app (cons (F_fn A_5 fn5 (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => (A_,x_) end ) A_x_t_y_list) e5) nil) (app F'_list nil)))) tsubst5 (e_fn_call fn5 (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => (e_term t_) end ) A_x_t_y_list))  (fold_right (fun (xt : x * t) (tsubst5 : tsubst) => Map.add (fst xt) (snd xt) tsubst5)  tsubst5   (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => (y_,t_) end ) A_x_t_y_list) )   (xsubst_e  e5    (fold_right (fun (xy : x * x) (xsubst5 : xsubst) => Map.add (fst xy) (snd xy) xsubst5) (Map.empty x)  (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => (x_,y_) end ) A_x_t_y_list) )  ) 
- | red_fun_ground_param : forall (A_x_t_y_list:list (A*x*t*x)) (F'_list:list F) (F_N_list:list (F*N)) (A_5:A) (fn5:fn) (e5:e) (tsubst5:tsubst),
-      (forall y5, In y5  (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => y_ end ) A_x_t_y_list)  -> ~ In y5 (vars_e  e5 ))  ->
-     red_tsubst_e ((app (map (fun (pat_:(F*N)) => match pat_ with (F_,N_) => F_ end ) F_N_list) (app (cons (F_fn_param A_5 fn5 (map (fun (pat_:(F*N)) => match pat_ with (F_,N_) => N_ end ) F_N_list) (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => (A_,x_) end ) A_x_t_y_list) e5) nil) (app F'_list nil)))) tsubst5 (e_fn_call fn5 (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => (e_term t_) end ) A_x_t_y_list))  (fold_right (fun (xt : x * t) (tsubst5 : tsubst) => Map.add (fst xt) (snd xt) tsubst5)  tsubst5   (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => (y_,t_) end ) A_x_t_y_list) )   (xsubst_e  e5    (fold_right (fun (xy : x * x) (xsubst5 : xsubst) => Map.add (fst xy) (snd xy) xsubst5) (Map.empty x)  (map (fun (pat_:(A*x*t*x)) => match pat_ with (A_,x_,t_,y_) => (x_,y_) end ) A_x_t_y_list) )  ) .
+Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
+ | red_var : forall (F_list:list F) (s5:s) (x5:x) (t5:t),
+      (Map.find  x5   s5  = Some ( t5 ))  ->
+     red_e F_list s5 (e_var x5) s5 (e_t t5)
+ | red_fun_exp : forall (e'_list e_list:list e) (F_list:list F) (s5:s) (fn5:fn) (e_5:e) (s':s) (e':e),
+     red_e F_list s5 e_5 s' e' ->
+     red_e F_list s5 (e_fn_call fn5 ((app e_list (app (cons e_5 nil) (app e'_list nil))))) s' (e_fn_call fn5 ((app e_list (app (cons e' nil) (app e'_list nil)))))
+ | red_fun_ground : forall (T_x_t_y_list:list (T*x*t*x)) (F'_list F_list:list F) (T_5:T) (fn5:fn) (e5:e) (s5:s),
+      True  ->
+     red_e ((app F_list (app (cons (F_fn T_5 fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (T_,x_) end ) T_x_t_y_list) e5) nil) (app F'_list nil)))) s5 (e_fn_call fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (e_t t_) end ) T_x_t_y_list))  (fold_right (fun (xt : x * t) (s5 : s) => Map.add (fst xt) (snd xt) s5)  s5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (y_,t_) end ) T_x_t_y_list) )   ( e5 ) .
 
 
