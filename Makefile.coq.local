@@ -20,6 +20,7 @@ docs/report/main.tex: docs/report/main.mng src/abs.ott
 docs/report/main.pdf: docs/report/abs_defs.tex docs/report/main.tex
 	pdflatex -output-directory=docs/report docs/report/main.tex
 	pdflatex -output-directory=docs/report docs/report/main.tex
+	pdflatex -output-directory=docs/report docs/report/main.tex
 
 coqdoc: $(GLOBFILES) $(VFILES) $(CSSFILES) $(JSFILES) $(HTMLFILES)
 	$(SHOW)'COQDOC -d $(COQDOCDIR)'
@@ -33,6 +34,6 @@ resources/index.html: resources/index.md
 	pandoc -s -o $@ $<
 
 clean::
-	$(HIDE)rm -f theories/abs_defs.v docs/abs_defs.tex \
+	$(HIDE)rm -f docs/abs_defs.tex \
 	 docs/report/main.tex docs/report/main.log docs/report/main.out \
  	 docs/report/main.toc docs/report/main.pdf docs/report/main.aux

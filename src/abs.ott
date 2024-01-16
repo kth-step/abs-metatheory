@@ -63,8 +63,8 @@ e :: e_ ::=
     {{ com variable }}
   | fn ( e1 , ... , en ) :: :: fn_call
     {{ com function call }}
-%  | e [ x1 |-> y1 , ... , xn |-> yn ] :: M :: xsubst 
-%    {{ coq (xsubst_e [[e]] [[xsubst]]) }}
+  | e [ x1 |-> y1 , ... , xn |-> yn ] :: M :: subst_var
+    {{ coq ([[e]]) }} % FIXME
 
 sig :: sig_ ::=
      | T1 , ... , Tn -> T :: :: sig
@@ -86,12 +86,12 @@ s {{ tex \sigma }} :: s_ ::=
      {{ coq (fold_right (fun (xt : x * t) (s5 : s) => Map.add (fst xt) (snd xt) s5) [[s]] [[x1 |-> t1 ... xn |-> tn]]) }}
 
 terminals :: terminals_ ::=
-	  | Bool :: :: bool {{ tex \mathsf{Bool} }}
-	  | Int :: :: int {{ tex \mathsf{Int} }}
-          | ~>  :: :: trans {{ tex \leadsto }}
-	  | |- :: :: turnstile {{ tex \vdash }}
-	  | |->  :: :: mapsto {{ tex \mapsto }}
-  	  | ->  :: :: arrow {{ tex \rightarrow }}
+  | Bool :: :: bool {{ tex \mathsf{Bool} }}
+  | Int :: :: int {{ tex \mathsf{Int} }}
+  | ~>  :: :: trans {{ tex \leadsto }}
+  | |- :: :: turnstile {{ tex \vdash }}
+  | |->  :: :: mapsto {{ tex \mapsto }}
+  | ->  :: :: arrow {{ tex \rightarrow }}
 
 formula :: formula_ ::= 
   {{ com formulas }}
@@ -105,6 +105,8 @@ formula :: formula_ ::=
     {{ coq (Map.find [[x]] [[s]] = Some ([[t]])) }}
   | G ( fn ) = sig :: M :: G_fn_eq_sig
     {{ coq (Map.find [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
+  | fresh ( x1 , ... , xn , e ) :: M :: fresh
+    {{ coq True }} % FIXME
 
 defns
   functional_well_typing :: t_ ::= 
@@ -149,7 +151,6 @@ defn
   ------------------------------------------------------------------------------------------------------------- :: fun_exp
   F1 ... Fn , s |- fn ( e1 , ... , ei , e , e'1 , ... , e'j ) ~> s' |- fn ( e1 , ... , ei , e' , e'1 , ... , e'j )
 
-  %fresh ( y1 , ... , yn , e )
+  fresh ( y1 , ... , yn , e )
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- :: fun_ground
-  F1 ... Fi def T fn ( T1 x1 , ... , Tn xn ) = e ; F'1 ... F'j , s |- fn ( t1 , ... , tn ) ~> s [ y1 |-> t1 , ... , yn |-> tn ] |- e
- %[ x1 |-> y1 , ... , xn |-> yn ]
+  F1 ... Fi def T fn ( T1 x1 , ... , Tn xn ) = e ; F'1 ... F'j , s |- fn ( t1 , ... , tn ) ~> s [ y1 |-> t1 , ... , yn |-> tn ] |- e [ x1 |-> y1 , ... , xn |-> yn ]

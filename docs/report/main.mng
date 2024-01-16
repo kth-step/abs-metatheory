@@ -41,6 +41,8 @@ We define ABS and describe its metatheory.
 
 \tableofcontents
 
+\newpage
+
 \section{Introduction}
 \label{sec:intro}
 Introduction goes here.
@@ -52,9 +54,9 @@ In this section, we define the abstract syntax of ABS.
 
 \ottgrammartabular{\ottT\ottinterrule}
 
-\ottgrammartabular{\ottB\ottinterrule}
-
 \ottgrammartabular{\ottF\ottinterrule}
+
+\ottgrammartabular{\ottt\ottinterrule}
 
 \ottgrammartabular{\otte\ottinterrule}
 
@@ -68,13 +70,15 @@ In this section, we define the semantics of ABS.
 
 \ottgrammartabular{\ottctxv\ottinterrule}
 
-\ottgrammartabular{\ottG\ottinterrule}
-
 \subsection{Typing}
 
 \ottdefntXXe{}
 
 \ottdefntXXF{}
+
+\subsection{Reduction}
+
+\ottdefnredXXe{}
 
 \section{Metatheory}
 \label{sec:metatheory}
