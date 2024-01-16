@@ -8,12 +8,14 @@ Require Import Ott.ott_list_core.
 
 Require Export Ascii.
 Require Export String.
+Require Export ZArith.
 
 Require Import FMapList OrderedTypeEx.
 Module Map <: FMapInterface.S := FMapList.Make String_as_OT.
 
-Hint Resolve bool_dec : ott_coq_equality.
-Hint Resolve ascii_dec : ott_coq_equality.
+#[export] Hint Resolve bool_dec : ott_coq_equality.
+#[export] Hint Resolve ascii_dec : ott_coq_equality.
+#[export] Hint Resolve Pos.eq_dec : ott_coq_equality.
 
 (** * ABS Definitions *)
 
@@ -35,21 +37,32 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_x : ott_coq_equality.
-
-Inductive B : Set :=  (*r basic type *)
- | B_bool : B
- | B_int : B.
+Definition b : Set := bool. (*r boolean *)
+Lemma eq_b: forall (x y : b), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_b : ott_coq_equality.
+Definition z : Set := Z. (*r integer *)
+Lemma eq_z: forall (x y : z), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_z : ott_coq_equality.
 
 Inductive T : Set :=  (*r ground type *)
- | T_basic_type (B5:B).
+ | T_bool : T
+ | T_int : T.
 
-Definition b : Set := bool.
+Inductive t : Set :=  (*r ground term *)
+ | t_b (b5:b) (*r boolean *)
+ | t_int (z5:z) (*r integer *).
 
 Inductive sig : Set := 
  | sig_sig (_:list T) (T_5:T).
 
 Inductive e : Set :=  (*r expression *)
- | e_b (b5:b) (*r boolean expression *)
+ | e_t (t5:t) (*r term *)
  | e_var (x5:x) (*r variable *)
  | e_fn_call (fn5:fn) (_:list e) (*r function call *).
 
@@ -60,6 +73,8 @@ Inductive ctxv : Set :=
 Inductive F : Set :=  (*r function definition *)
  | F_fn (T_5:T) (fn5:fn) (_:list (T*x)) (e5:e).
 
+Definition s : Type := Map.t t.
+
 Definition G : Type := Map.t ctxv.
 (** induction principles *)
 Section e_rect.
@@ -69,7 +84,7 @@ Variables
   (P_list_e : list e -> Prop).
 
 Hypothesis
-  (H_e_b : forall (b5:b), P_e (e_b b5))
+  (H_e_t : forall (t5:t), P_e (e_t t5))
   (H_e_var : forall (x5:x), P_e (e_var x5))
   (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fn5:fn), P_e (e_fn_call fn5 e_list))
   (H_list_e_nil : P_list_e nil)
@@ -77,7 +92,7 @@ Hypothesis
 
 Fixpoint e_ott_ind (n:e) : P_e n :=
   match n as x return P_e x with
-  | (e_b b5) => H_e_b b5
+  | (e_t t5) => H_e_t t5
   | (e_var x5) => H_e_var x5
   | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_ind (e_l:list e) : P_list_e e_l := match e_l as x return P_list_e x with nil => H_list_e_nil | cons e1 xl => H_list_e_cons e1(e_ott_ind e1)xl (e_list_ott_ind xl) end)) e_list) fn5
 end.
@@ -88,7 +103,7 @@ End e_rect.
 (* defns functional_well_typing *)
 Inductive t_e : G -> e -> T -> Prop :=    (* defn e *)
  | t_bool : forall (G5:G) (b5:b),
-     t_e G5 (e_b b5) (T_basic_type B_bool)
+     t_e G5 (e_t (t_b b5)) T_bool
  | t_var : forall (G5:G) (x5:x) (T5:T),
       (Map.find  x5   G5  = Some (ctxv_T  T5 ))  ->
      t_e G5 (e_var x5) T5
@@ -101,5 +116,17 @@ with t_F : G -> F -> Prop :=    (* defn F *)
       (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => T_ end ) T_x_list) T_5) ))  ->
      t_e  (fold_right (fun (ax : x * T) (G5 : G) => Map.add (fst ax) (ctxv_T (snd ax)) G5)  G5   (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => (x_,T_) end ) T_x_list) )  e5 T_5 ->
      t_F G5 (F_fn T_5 fn5 T_x_list e5).
+(** definitions *)
+
+(* defns functional_evaluation *)
+Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
+ | red_var : forall (F_list:list F) (s5:s) (x5:x) (t5:t),
+      (Map.find  x5   s5  = Some ( t5 ))  ->
+     red_e F_list s5 (e_var x5) s5 (e_t t5)
+ | red_fun_exp : forall (e'_list e_list:list e) (F_list:list F) (s5:s) (fn5:fn) (e_5:e) (s':s) (e':e),
+     red_e F_list s5 e_5 s' e' ->
+     red_e F_list s5 (e_fn_call fn5 ((app e_list (app (cons e_5 nil) (app e'_list nil))))) s' (e_fn_call fn5 ((app e_list (app (cons e' nil) (app e'_list nil)))))
+ | red_fun_ground : forall (T_x_t_y_list:list (T*x*t*x)) (F'_list F_list:list F) (T_5:T) (fn5:fn) (e5:e) (s5:s),
+     red_e ((app F_list (app (cons (F_fn T_5 fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (T_,x_) end ) T_x_t_y_list) e5) nil) (app F'_list nil)))) s5 (e_fn_call fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (e_t t_) end ) T_x_t_y_list))  (fold_right (fun (xt : x * t) (s5 : s) => Map.add (fst xt) (snd xt) s5)  s5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (y_,t_) end ) T_x_t_y_list) )  e5.
 
 

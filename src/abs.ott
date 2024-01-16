@@ -2,12 +2,14 @@ embed
 {{ coq
 Require Export Ascii.
 Require Export String.
+Require Export ZArith.
 
 Require Import FMapList OrderedTypeEx.
 Module Map <: FMapInterface.S := FMapList.Make String_as_OT.
 
-Hint Resolve bool_dec : ott_coq_equality.
-Hint Resolve ascii_dec : ott_coq_equality.
+#[export] Hint Resolve bool_dec : ott_coq_equality.
+#[export] Hint Resolve ascii_dec : ott_coq_equality.
+#[export] Hint Resolve Pos.eq_dec : ott_coq_equality.
 
 (** * ABS Definitions *)
 }}
@@ -26,13 +28,19 @@ metavar x, y ::=
       {{ coq string }}
       {{ coq-equality }}
       {{ com variable }}
+metavar b ::=
+  {{ lex alphanum }}
+  {{ com boolean }}
+  {{ coq-equality }}
+  {{ coq bool }}
+metavar z ::=
+  {{ lex numeral }}
+  {{ com integer }}
+  {{ coq-equality }}
+  {{ coq Z }}
 grammar
 T :: T_ ::=
    {{ com ground type }}
-  | B :: :: basic_type
-
-B :: B_ ::=
-  {{ com basic type }}
   | Bool :: :: bool 
   | Int  :: :: int
 
@@ -40,23 +48,23 @@ F :: F_ ::=
   {{ com function definition }}
   | def T fn ( T1 x1 , ... , Tn xn ) = e ; :: :: fn
 
-b :: b_ ::=
-  {{ com boolean }}
-  {{ coq bool }}
-  {{ coq-equality }}
-  | True :: M :: true
-    {{ coq true }}
-  | False :: M :: false
-    {{ coq false }}
+t :: t_ ::=
+  {{ com ground term }}
+  | b :: :: b
+    {{ com boolean }}
+  | z :: :: int
+    {{ com integer }}
 
 e :: e_ ::=
   {{ com expression }}
-  | b :: :: b
-    {{ com boolean expression }}
+  | t :: :: t
+    {{ com term }}
   | x :: :: var
     {{ com variable }}
   | fn ( e1 , ... , en ) :: :: fn_call
     {{ com function call }}
+%  | e [ x1 |-> y1 , ... , xn |-> yn ] :: M :: xsubst 
+%    {{ coq (xsubst_e [[e]] [[xsubst]]) }}
 
 sig :: sig_ ::=
      | T1 , ... , Tn -> T :: :: sig
@@ -71,13 +79,15 @@ G {{ tex \Gamma }} :: G_ ::=
    | G [ x1 |-> T1 , ... , xn |-> Tn ] :: M :: add_list
      {{ coq (fold_right (fun (ax : x * T) (G5 : G) => Map.add (fst ax) (ctxv_T (snd ax)) G5) [[G]] [[x1 |-> T1 ... xn |-> Tn]]) }}
 
+s {{ tex \sigma }} :: s_ ::=
+  {{ coq Map.t t }}
+  {{ coq-universe Type }}
+   | s [ x1 |-> t1 , ... , xn |-> tn ] :: M :: add_list
+     {{ coq (fold_right (fun (xt : x * t) (s5 : s) => Map.add (fst xt) (snd xt) s5) [[s]] [[x1 |-> t1 ... xn |-> tn]]) }}
+
 terminals :: terminals_ ::=
-  	  | {  :: :: leftbrace {{ tex \{ }}
-	  | }  :: :: rightbrace {{ tex \} }}
 	  | Bool :: :: bool {{ tex \mathsf{Bool} }}
 	  | Int :: :: int {{ tex \mathsf{Int} }}
-	  | True :: :: true {{ tex \mathrm{True} }}
-	  | False :: :: false {{ tex \mathrm{False} }}
           | ~>  :: :: trans {{ tex \leadsto }}
 	  | |- :: :: turnstile {{ tex \vdash }}
 	  | |->  :: :: mapsto {{ tex \mapsto }}
@@ -91,6 +101,8 @@ formula :: formula_ ::=
     {{ com conjunction of formulas }}
   | G ( x ) = T :: M :: G_eq_T
     {{ coq (Map.find [[x]] [[G]] = Some (ctxv_T [[T]])) }}
+  | s ( x ) = t :: M :: s_eq_t
+    {{ coq (Map.find [[x]] [[s]] = Some ([[t]])) }}
   | G ( fn ) = sig :: M :: G_fn_eq_sig
     {{ coq (Map.find [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
 
@@ -121,3 +133,23 @@ defn
   G [ x1 |-> T1 , ... , xn |-> Tn ] |- e : T
   ------------------------------------------- :: func_decl
   G |- def T fn ( T1 x1 , ... , Tn xn ) = e ;
+
+defns
+  functional_evaluation :: red_ ::= 
+
+defn
+  F1 ... Fn , s |- e ~> s' |- e' :: :: e :: ''
+  {{ com expression evaluation }} by
+
+  s ( x ) = t
+  ---------------------------- :: var
+  F1 ... Fn , s |- x ~> s |- t
+
+  F1 ... Fn , s |- e ~> s' |- e'
+  ------------------------------------------------------------------------------------------------------------- :: fun_exp
+  F1 ... Fn , s |- fn ( e1 , ... , ei , e , e'1 , ... , e'j ) ~> s' |- fn ( e1 , ... , ei , e' , e'1 , ... , e'j )
+
+  %fresh ( y1 , ... , yn , e )
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- :: fun_ground
+  F1 ... Fi def T fn ( T1 x1 , ... , Tn xn ) = e ; F'1 ... F'j , s |- fn ( t1 , ... , tn ) ~> s [ y1 |-> t1 , ... , yn |-> tn ] |- e
+ %[ x1 |-> y1 , ... , xn |-> yn ]
