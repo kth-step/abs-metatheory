@@ -101,21 +101,23 @@ End e_rect.
 (** definitions *)
 
 (* defns functional_well_typing *)
-Inductive t_e : G -> e -> T -> Prop :=    (* defn e *)
- | t_bool : forall (G5:G) (b5:b),
-     t_e G5 (e_t (t_b b5)) T_bool
- | t_var : forall (G5:G) (x5:x) (T5:T),
+Inductive typ_e : G -> e -> T -> Prop :=    (* defn e *)
+ | typ_bool : forall (G5:G) (b5:b),
+     typ_e G5 (e_t (t_b b5)) T_bool
+ | typ_int : forall (G5:G) (z5:z),
+     typ_e G5 (e_t (t_int z5)) T_int
+ | typ_var : forall (G5:G) (x5:x) (T5:T),
       (Map.find  x5   G5  = Some (ctxv_T  T5 ))  ->
-     t_e G5 (e_var x5) T5
- | t_func_expr : forall (e_T_list:list (e*T)) (G5:G) (fn5:fn) (T_5:T),
-     (forall e_ T_, In (e_,T_) (map (fun (pat_: (e*T)) => match pat_ with (e_,T_) => (e_,T_) end) e_T_list) -> (t_e G5 e_ T_)) ->
+     typ_e G5 (e_var x5) T5
+ | typ_func_expr : forall (e_T_list:list (e*T)) (G5:G) (fn5:fn) (T_5:T),
+     (forall e_ T_, In (e_,T_) (map (fun (pat_: (e*T)) => match pat_ with (e_,T_) => (e_,T_) end) e_T_list) -> (typ_e G5 e_ T_)) ->
       (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => T_ end ) e_T_list) T_5) ))  ->
-     t_e G5 (e_fn_call fn5 (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => e_ end ) e_T_list)) T_5
-with t_F : G -> F -> Prop :=    (* defn F *)
- | t_func_decl : forall (T_x_list:list (T*x)) (G5:G) (T_5:T) (fn5:fn) (e5:e),
+     typ_e G5 (e_fn_call fn5 (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => e_ end ) e_T_list)) T_5
+with typ_F : G -> F -> Prop :=    (* defn F *)
+ | typ_func_decl : forall (T_x_list:list (T*x)) (G5:G) (T_5:T) (fn5:fn) (e5:e),
       (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => T_ end ) T_x_list) T_5) ))  ->
-     t_e  (fold_right (fun (ax : x * T) (G5 : G) => Map.add (fst ax) (ctxv_T (snd ax)) G5)  G5   (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => (x_,T_) end ) T_x_list) )  e5 T_5 ->
-     t_F G5 (F_fn T_5 fn5 T_x_list e5).
+     typ_e  (fold_right (fun (ax : x * T) (G5 : G) => Map.add (fst ax) (ctxv_T (snd ax)) G5)  G5   (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => (x_,T_) end ) T_x_list) )  e5 T_5 ->
+     typ_F G5 (F_fn T_5 fn5 T_x_list e5).
 (** definitions *)
 
 (* defns functional_evaluation *)

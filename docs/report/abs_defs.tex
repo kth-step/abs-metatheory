@@ -142,51 +142,59 @@
 % defnss
 % defns functional_well_typing
 %% defn e
-\newcommand{\ottdruletXXbool}[1]{\ottdrule[#1]{%
+\newcommand{\ottdruletypXXbool}[1]{\ottdrule[#1]{%
 }{
 \Gamma  \vdash  \ottmv{b}  \ottsym{:}  \mathsf{Bool}}{%
-{\ottdrulename{t\_bool}}{}%
+{\ottdrulename{typ\_bool}}{}%
 }}
 
 
-\newcommand{\ottdruletXXvar}[1]{\ottdrule[#1]{%
+\newcommand{\ottdruletypXXint}[1]{\ottdrule[#1]{%
+}{
+\Gamma  \vdash  \ottmv{z}  \ottsym{:}  \mathsf{Int}}{%
+{\ottdrulename{typ\_int}}{}%
+}}
+
+
+\newcommand{\ottdruletypXXvar}[1]{\ottdrule[#1]{%
 \ottpremise{\Gamma  \ottsym{(}  \ottmv{x}  \ottsym{)}  \ottsym{=}  \ottnt{T}}%
 }{
 \Gamma  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{T}}{%
-{\ottdrulename{t\_var}}{}%
+{\ottdrulename{typ\_var}}{}%
 }}
 
 
-\newcommand{\ottdruletXXfuncXXexpr}[1]{\ottdrule[#1]{%
+\newcommand{\ottdruletypXXfuncXXexpr}[1]{\ottdrule[#1]{%
 \ottpremise{\Gamma  \vdash  \ottnt{e_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{T_{{\mathrm{1}}}} \quad ... \quad \Gamma  \vdash  \ottnt{e_{\ottmv{n}}}  \ottsym{:}  \ottnt{T_{\ottmv{n}}}}%
 \ottpremise{\Gamma  \ottsym{(}  \ottmv{fn}  \ottsym{)}  \ottsym{=}  \ottnt{T_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{T_{\ottmv{n}}}  \rightarrow  \ottnt{T}}%
 }{
 \Gamma  \vdash  \ottmv{fn}  \ottsym{(}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{e_{\ottmv{n}}}  \ottsym{)}  \ottsym{:}  \ottnt{T}}{%
-{\ottdrulename{t\_func\_expr}}{}%
+{\ottdrulename{typ\_func\_expr}}{}%
 }}
 
-\newcommand{\ottdefntXXe}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{T}$}{\ottcom{well-typed expression}}
-\ottusedrule{\ottdruletXXbool{}}
-\ottusedrule{\ottdruletXXvar{}}
-\ottusedrule{\ottdruletXXfuncXXexpr{}}
+\newcommand{\ottdefntypXXe}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{T}$}{\ottcom{well-typed expression}}
+\ottusedrule{\ottdruletypXXbool{}}
+\ottusedrule{\ottdruletypXXint{}}
+\ottusedrule{\ottdruletypXXvar{}}
+\ottusedrule{\ottdruletypXXfuncXXexpr{}}
 \end{ottdefnblock}}
 
 %% defn F
-\newcommand{\ottdruletXXfuncXXdecl}[1]{\ottdrule[#1]{%
+\newcommand{\ottdruletypXXfuncXXdecl}[1]{\ottdrule[#1]{%
 \ottpremise{\Gamma  \ottsym{(}  \ottmv{fn}  \ottsym{)}  \ottsym{=}  \ottnt{T_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{T_{\ottmv{n}}}  \rightarrow  \ottnt{T}}%
 \ottpremise{\Gamma  \ottsym{[}  \ottmv{x_{{\mathrm{1}}}}  \mapsto  \ottnt{T_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottmv{x_{\ottmv{n}}}  \mapsto  \ottnt{T_{\ottmv{n}}}  \ottsym{]}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{T}}%
 }{
 \Gamma  \vdash  \ottkw{def} \, \ottnt{T} \, \ottmv{fn}  \ottsym{(}  \ottnt{T_{{\mathrm{1}}}} \, \ottmv{x_{{\mathrm{1}}}}  \ottsym{,} \, ... \, \ottsym{,}  \ottnt{T_{\ottmv{n}}} \, \ottmv{x_{\ottmv{n}}}  \ottsym{)}  \ottsym{=}  \ottnt{e}  \ottsym{;}}{%
-{\ottdrulename{t\_func\_decl}}{}%
+{\ottdrulename{typ\_func\_decl}}{}%
 }}
 
-\newcommand{\ottdefntXXF}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{F}$}{\ottcom{well-typed function declaration}}
-\ottusedrule{\ottdruletXXfuncXXdecl{}}
+\newcommand{\ottdefntypXXF}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{F}$}{\ottcom{well-typed function declaration}}
+\ottusedrule{\ottdruletypXXfuncXXdecl{}}
 \end{ottdefnblock}}
 
 
 \newcommand{\ottdefnsfunctionalXXwellXXtyping}{
-\ottdefntXXe{}\ottdefntXXF{}}
+\ottdefntypXXe{}\ottdefntypXXF{}}
 
 % defns functional_evaluation
 %% defn e

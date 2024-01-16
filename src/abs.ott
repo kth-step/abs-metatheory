@@ -109,7 +109,7 @@ formula :: formula_ ::=
     {{ coq True }} % FIXME
 
 defns
-  functional_well_typing :: t_ ::= 
+  functional_well_typing :: typ_ ::= 
 
 defn 
   G |- e : T :: :: e :: ''
@@ -117,6 +117,9 @@ defn
   
   ------------- :: bool
   G |- b : Bool
+
+  ------------ :: int
+  G |- z : Int
 
   G ( x ) = T
   ----------- :: var

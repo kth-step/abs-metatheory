@@ -72,9 +72,9 @@ In this section, we define the semantics of ABS.
 
 \subsection{Typing}
 
-\ottdefntXXe{}
+\ottdefntypXXe{}
 
-\ottdefntXXF{}
+\ottdefntypXXF{}
 
 \subsection{Reduction}
 
