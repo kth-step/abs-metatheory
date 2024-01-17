@@ -18,3 +18,4 @@ docs/coqdoc
 .lia.cache
 .coq-native
 docs/report/main.tex
+docs/report/abs_defs.tex
