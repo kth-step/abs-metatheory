@@ -92,6 +92,7 @@ terminals :: terminals_ ::=
   | |- :: :: turnstile {{ tex \vdash }}
   | |->  :: :: mapsto {{ tex \mapsto }}
   | ->  :: :: arrow {{ tex \rightarrow }}
+  | fresh :: :: fresh {{ tex \mathsf{fresh} }}
 
 formula :: formula_ ::= 
   {{ com formulas }}

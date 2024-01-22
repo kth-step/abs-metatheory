@@ -86,15 +86,15 @@ In this section, we define the semantics of ABS.
 In this section, we define the metatheory of ABS.
 
 \begin{definition}
-A context $[[G']]$ subsumes context $[[G]]$, written $[[G]] \subseteq [[G']]$, if whenever $[[G(x) = T]]$ then $[[G'(x) = T]]$ and whenever $[[G(fn) = sig]]$ then $[[G'(fn) = sig]]$.
+A context $[[G']]$ subsumes a context $[[G]]$, written $[[G]] \subseteq [[G']]$, if (1) whenever $[[G(x) = T]]$ then $[[G'(x) = T]]$ and (2) whenever $[[G(fn) = sig]]$ then $[[G'(fn) = sig]]$.
 \end{definition}
 
 \begin{definition}
-A context $[[G]]$ is consistent with a substitutition $[[s]]$, written $[[G]] \vdash [[s]]$.
+A context $[[G]]$ is consistent with a substitutition $[[s]]$, written $[[G]] \vdash [[s]]$, if whenever $[[s(x) = t]]$ and $[[G(x) = T]]$, then $[[G |- t : T]]$.
 \end{definition}
 
 \begin{theorem}[Type preservation]
-Assume $[[G]] \vdash [[s]]$
+Assume $[[G |- F1 ... G |- Fn]]$ and $[[G]] \vdash [[s]]$. If $[[G |- e : T]]$ and $[[F1 ... Fn , s |- e ~> s' |- e']]$, then there is a $[[G']]$ such that $[[G]] \subseteq [[G']]$, $[[G']] \vdash [[s']]$, and $[[G' |- e' : T]]$.
 \end{theorem}
 
 \bibliographystyle{abbrv}
