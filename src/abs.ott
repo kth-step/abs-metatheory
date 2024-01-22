@@ -110,7 +110,7 @@ formula :: formula_ ::=
     {{ coq True }} % FIXME
 
 defns
-  functional_well_typing :: typ_ ::= 
+  expression_well_typing :: typ_ ::=
 
 defn 
   G |- e : T :: :: e :: ''
@@ -131,6 +131,9 @@ defn
   ----------------------------- :: func_expr
   G |- fn ( e1 , ... , en ) : T
 
+defns
+  function_well_typing :: typ_ ::=
+
 defn
   G |- F :: :: F :: ''
     {{ com well-typed function declaration }} by
@@ -141,7 +144,7 @@ defn
   G |- def T fn ( T1 x1 , ... , Tn xn ) = e ;
 
 defns
-  functional_evaluation :: red_ ::= 
+  evaluation_reduction :: red_ ::=
 
 defn
   F1 ... Fn , s |- e ~> s' |- e' :: :: e :: ''

@@ -100,7 +100,7 @@ end.
 End e_rect.
 (** definitions *)
 
-(* defns functional_well_typing *)
+(* defns expression_well_typing *)
 Inductive typ_e : G -> e -> T -> Prop :=    (* defn e *)
  | typ_bool : forall (G5:G) (b5:b),
      typ_e G5 (e_t (t_b b5)) T_bool
@@ -112,15 +112,18 @@ Inductive typ_e : G -> e -> T -> Prop :=    (* defn e *)
  | typ_func_expr : forall (e_T_list:list (e*T)) (G5:G) (fn5:fn) (T_5:T),
      (forall e_ T_, In (e_,T_) (map (fun (pat_: (e*T)) => match pat_ with (e_,T_) => (e_,T_) end) e_T_list) -> (typ_e G5 e_ T_)) ->
       (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => T_ end ) e_T_list) T_5) ))  ->
-     typ_e G5 (e_fn_call fn5 (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => e_ end ) e_T_list)) T_5
-with typ_F : G -> F -> Prop :=    (* defn F *)
+     typ_e G5 (e_fn_call fn5 (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => e_ end ) e_T_list)) T_5.
+(** definitions *)
+
+(* defns function_well_typing *)
+Inductive typ_F : G -> F -> Prop :=    (* defn F *)
  | typ_func_decl : forall (T_x_list:list (T*x)) (G5:G) (T_5:T) (fn5:fn) (e5:e),
       (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => T_ end ) T_x_list) T_5) ))  ->
      typ_e  (fold_right (fun (ax : x * T) (G5 : G) => Map.add (fst ax) (ctxv_T (snd ax)) G5)  G5   (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => (x_,T_) end ) T_x_list) )  e5 T_5 ->
      typ_F G5 (F_fn T_5 fn5 T_x_list e5).
 (** definitions *)
 
-(* defns functional_evaluation *)
+(* defns evaluation_reduction *)
 Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
  | red_var : forall (F_list:list F) (s5:s) (x5:x) (t5:t),
       (Map.find  x5   s5  = Some ( t5 ))  ->
