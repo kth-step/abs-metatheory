@@ -158,11 +158,10 @@ Program Fixpoint my_fresh (l : list x) (e0 : e) {measure (e_size e0)} : Prop :=
                  /\ my_fresh l (e_fn_call fn es')
       end
   end.
-
-Next Obligation. cbn;lia. Defined.
+Next Obligation. cbn;lia. Qed.
 Next Obligation.
   induction es';cbn; specialize (size_ge_1 e1);intro; lia.
-Defined.
+Qed.
 
 }}
 
