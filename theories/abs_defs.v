@@ -9,6 +9,8 @@ Require Import Ott.ott_list_core.
 Require Export Ascii.
 Require Export String.
 Require Export ZArith.
+Require Import Lia.
+Require Coq.Program.Wf.
 
 Require Import FMapList OrderedTypeEx.
 Module Map <: FMapInterface.S := FMapList.Make String_as_OT.
@@ -98,8 +100,57 @@ Fixpoint e_ott_ind (n:e) : P_e n :=
 end.
 
 End e_rect.
-Definition my_subst (e5:e) (l:list (x*x)) := e5.
-Definition my_fresh (l : list x) (e5 : e) := True.
+Fixpoint get_val (k:x) (l:list(x*x)): option x :=
+  match l with
+  | nil => None
+  | (k', v) :: l' =>
+      match eq_x k k' with
+      | left _ => Some v
+      | _ => get_val k l'
+      end
+  end.
+
+Fixpoint my_subst (e5:e) (l:list (x*x)) : e :=
+  match e5 with
+  | e_t t => e_t t
+  | e_var x =>
+      match get_val x l with
+              | None => e_var x
+              | Some y => e_var y
+              end
+  | e_fn_call fn e_list =>
+      e_fn_call fn (map (fun e => my_subst e l) e_list)
+  end.
+
+(* we actually need to do some work to convince Coq my_fresh is well founded *)
+Fixpoint e_size (e0 : e) : nat :=
+  match e0 with
+  | e_t _ => 1
+  | e_var _ => 1
+  | e_fn_call _ es => 1 + list_sum (map e_size es)
+  end.
+
+Lemma size_ge_1: forall e0,
+     1 <= e_size e0.
+Proof. destruct e0;cbn;lia. Qed.
+
+Program Fixpoint my_fresh (l : list x) (e0 : e) {measure (e_size e0)} : Prop :=
+  match e0 with
+  | e_t _ => True
+  | e_var x => ~ In x l
+  | e_fn_call fn es =>
+      match es with
+      | nil => True
+      | e1::es' => my_fresh l e1
+                 /\ my_fresh l (e_fn_call fn es')
+      end
+  end.
+
+Next Obligation. cbn;lia. Defined.
+Next Obligation.
+  induction es';cbn; specialize (size_ge_1 e1);intro; lia.
+Defined.
+
 
 (** definitions *)
 
