@@ -15,12 +15,12 @@ Definition G_vdash_s (G5 : G) (s5 : s) :=
   Map.find x5 G5 = Some (ctxv_T T5) ->
   typ_e G5 (e_t t5) T5.
 
-Lemma type_preservation : forall (G5 : G) (s5 : s), 
+Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
+  (* FIXME: add well-typing of all function definitions here *)
   G_vdash_s G5 s5 ->
-  forall (Flist : list F) (e5 : e) (T5 : T) (s' : s) (e' : e),
+  forall (e5 : e) (T5 : T) (s' : s) (e' : e),
     typ_e G5 e5 T5 ->
     red_e Flist s5 e5 s' e' ->
     exists G', subG G5 G' /\ G_vdash_s G' s' /\ typ_e G' e' T5.
 Proof.
 Admitted.
-

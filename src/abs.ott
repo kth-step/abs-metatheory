@@ -64,7 +64,7 @@ e :: e_ ::=
   | fn ( e1 , ... , en ) :: :: fn_call
     {{ com function call }}
   | e [ x1 |-> y1 , ... , xn |-> yn ] :: M :: subst_var
-    {{ coq ([[e]]) }} % FIXME
+    {{ coq (my_subst [[e]] [[x1 |-> y1 ... xn |-> yn]]) }} % FIXME
 
 sig :: sig_ ::=
      | T1 , ... , Tn -> T :: :: sig
@@ -107,7 +107,13 @@ formula :: formula_ ::=
   | G ( fn ) = sig :: M :: G_fn_eq_sig
     {{ coq (Map.find [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
   | fresh ( x1 , ... , xn , e ) :: M :: fresh
-    {{ coq True }} % FIXME
+    {{ coq (my_fresh [[x1 ... xn]] [[e]]) }} % FIXME
+
+embed
+{{ coq
+Definition my_subst (e5:e) (l:list (x*x)) := e5. (* FIXME *)
+Definition my_fresh (l : list x) (e5 : e) := True. (* FIXME *)
+}}
 
 defns
   expression_well_typing :: typ_ ::=
