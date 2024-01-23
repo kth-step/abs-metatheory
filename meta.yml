@@ -58,12 +58,18 @@ build: |-
   ```
   
   To build when dependencies are installed, do:
-  
   ```shell
   git clone https://github.com/kth-step/abs-metatheory.git
   cd abs-metatheory
   make   # or make -j <number-of-cores-on-your-machine> 
   ```
+
+  To build a pdf documenting the project, ensure that `ott` and
+  TeX Live (`pdflatex`) are installed, and do:
+  ```shell
+  make docs/report/main.pdf
+  ```
+  Note that the source file to edit for this pdf is `docs/report/main.mng`.
 
 documentation: |-
   ## Documentation
