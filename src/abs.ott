@@ -66,7 +66,7 @@ e :: e_ ::=
   | fn ( e1 , ... , en ) :: :: fn_call
     {{ com function call }}
   | e [ x1 |-> y1 , ... , xn |-> yn ] :: M :: subst_var
-    {{ coq (my_subst [[e]] [[x1 |-> y1 ... xn |-> yn]]) }}
+    {{ coq (e_var_subst [[e]] [[x1 |-> y1 ... xn |-> yn]]) }}
 
 sig :: sig_ ::=
      | T1 , ... , Tn -> T :: :: sig
