@@ -109,7 +109,7 @@ formula :: formula_ ::=
   | G ( fn ) = sig :: M :: G_fn_eq_sig
     {{ coq (Map.find [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
   | fresh ( x1 , ... , xn , e ) :: M :: fresh
-    {{ coq (my_fresh [[x1 ... xn]] [[e]]) }}
+    {{ coq (fresh_vars [[x1 ... xn]] [[e]]) }}
 
 embed
 {{ coq
@@ -123,7 +123,7 @@ Fixpoint get_val (k:x) (l:list(x*x)): option x :=
       end
   end.
 
-Fixpoint my_subst (e5:e) (l:list (x*x)) : e :=
+Fixpoint e_var_subst (e5:e) (l:list (x*x)) : e :=
   match e5 with
   | e_t t => e_t t
   | e_var x =>
@@ -132,10 +132,10 @@ Fixpoint my_subst (e5:e) (l:list (x*x)) : e :=
               | Some y => e_var y
               end
   | e_fn_call fn e_list =>
-      e_fn_call fn (map (fun e => my_subst e l) e_list)
+      e_fn_call fn (map (fun e => e_var_subst e l) e_list)
   end.
 
-(* we actually need to do some work to convince Coq my_fresh is well founded *)
+(* we actually need to do some work to convince Coq fresh_vars is well founded *)
 Fixpoint e_size (e0 : e) : nat :=
   match e0 with
   | e_t _ => 1
@@ -154,8 +154,8 @@ Program Fixpoint fresh_vars (l : list x) (e0 : e) {measure (e_size e0)} : Prop :
   | e_fn_call fn es =>
       match es with
       | nil => True
-      | e1::es' => my_fresh l e1
-                 /\ my_fresh l (e_fn_call fn es')
+      | e1::es' => fresh_vars l e1
+                 /\ fresh_vars l (e_fn_call fn es')
       end
   end.
 Next Obligation. cbn;lia. Qed.
