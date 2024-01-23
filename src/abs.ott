@@ -147,7 +147,7 @@ Lemma size_ge_1: forall e0,
      1 <= e_size e0.
 Proof. destruct e0;cbn;lia. Qed.
 
-Program Fixpoint my_fresh (l : list x) (e0 : e) {measure (e_size e0)} : Prop :=
+Program Fixpoint fresh_vars (l : list x) (e0 : e) {measure (e_size e0)} : Prop :=
   match e0 with
   | e_t _ => True
   | e_var x => ~ In x l
