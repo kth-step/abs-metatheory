@@ -21,7 +21,7 @@ Formal metatheory in Coq for the ABS language.
   - Karl Palmskog
 - Compatible Coq versions: 8.16 or later
 - Additional dependencies:
-  - [Ott Coq library](https://github.com/ott-lang/ott) 0.33 or later
+  - [Equations Coq library](https://github.com/mattam82/Coq-Equations) 1.3 or later
 - Coq namespace: `ABS`
 - Related publication(s):
   - [ABS: A Core Language for Abstract Behavioral Specification](https://link.springer.com/chapter/10.1007/978-3-642-25271-6_8) doi:[10.1007/978-3-642-25271-6_8](https://doi.org/10.1007/978-3-642-25271-6_8)
