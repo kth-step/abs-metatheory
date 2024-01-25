@@ -122,23 +122,13 @@ Fixpoint e_var_subst (e5:e) (l:list (x*x)) : e :=
       e_fn_call fn (map (fun e => e_var_subst e l) e_list)
   end.
 
-(* we actually need to do some work to convince Coq fresh_vars is well founded *)
-Fixpoint e_size (e0 : e) : nat :=
-  match e0 with
-  | e_t _ => 1
-  | e_var _ => 1
-  | e_fn_call _ es => 1 + list_sum (map e_size es)
-  end.
-
-Equations fresh_vars (l : list x) (e0 : e) : Prop by wf (e_size e0) lt :=
-  fresh_vars _ (e_t _) := True;
-  fresh_vars l (e_var x) := ~ In x l;
-  fresh_vars _ (e_fn_call fn nil) := True;
-  fresh_vars l (e_fn_call fn (e1::es)) :=
-    fresh_vars l e1 /\ fresh_vars l (e_fn_call fn es).
-Next Obligation. lia. Qed.
-Next Obligation. destruct e1;cbn;lia. Qed.
-
+Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
+ fresh_vars_e _ (e_t _) := True;
+ fresh_vars_e l (e_var x) := ~ In x l;
+ fresh_vars_e l (e_fn_call fn el) := fresh_vars_el l el }
+where fresh_vars_el (l : list x) (el0 : list e) : Prop := {
+ fresh_vars_el l nil := True;
+ fresh_vars_el l (e1::el0) := fresh_vars_e l e1 /\ fresh_vars_el l el0 }.
 
 (** definitions *)
 
@@ -174,7 +164,7 @@ Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
      red_e F_list s5 e_5 s' e' ->
      red_e F_list s5 (e_fn_call fn5 ((app e_list (app (cons e_5 nil) (app e'_list nil))))) s' (e_fn_call fn5 ((app e_list (app (cons e' nil) (app e'_list nil)))))
  | red_fun_ground : forall (T_x_t_y_list:list (T*x*t*x)) (F'_list F_list:list F) (T_5:T) (fn5:fn) (e5:e) (s5:s),
-      (fresh_vars  (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => y_ end ) T_x_t_y_list)   e5 )  ->
+      (fresh_vars_e  (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => y_ end ) T_x_t_y_list)   e5 )  ->
      red_e ((app F_list (app (cons (F_fn T_5 fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (T_,x_) end ) T_x_t_y_list) e5) nil) (app F'_list nil)))) s5 (e_fn_call fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (e_t t_) end ) T_x_t_y_list))  (fold_right (fun (xt : x * t) (s5 : s) => Map.add (fst xt) (snd xt) s5)  s5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (y_,t_) end ) T_x_t_y_list) )   (e_var_subst  e5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (x_,y_) end ) T_x_t_y_list) ) .
 
 

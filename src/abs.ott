@@ -109,7 +109,7 @@ formula :: formula_ ::=
   | G ( fn ) = sig :: M :: G_fn_eq_sig
     {{ coq (Map.find [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
   | fresh ( x1 , ... , xn , e ) :: M :: fresh
-    {{ coq (fresh_vars [[x1 ... xn]] [[e]]) }}
+    {{ coq (fresh_vars_e [[x1 ... xn]] [[e]]) }}
 
 embed
 {{ coq
@@ -135,23 +135,13 @@ Fixpoint e_var_subst (e5:e) (l:list (x*x)) : e :=
       e_fn_call fn (map (fun e => e_var_subst e l) e_list)
   end.
 
-(* we actually need to do some work to convince Coq fresh_vars is well founded *)
-Fixpoint e_size (e0 : e) : nat :=
-  match e0 with
-  | e_t _ => 1
-  | e_var _ => 1
-  | e_fn_call _ es => 1 + list_sum (map e_size es)
-  end.
-
-Equations fresh_vars (l : list x) (e0 : e) : Prop by wf (e_size e0) lt :=
-  fresh_vars _ (e_t _) := True;
-  fresh_vars l (e_var x) := ~ In x l;
-  fresh_vars _ (e_fn_call fn nil) := True;
-  fresh_vars l (e_fn_call fn (e1::es)) :=
-    fresh_vars l e1 /\ fresh_vars l (e_fn_call fn es).
-Next Obligation. lia. Qed.
-Next Obligation. destruct e1;cbn;lia. Qed.
-
+Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
+ fresh_vars_e _ (e_t _) := True;
+ fresh_vars_e l (e_var x) := ~ In x l;
+ fresh_vars_e l (e_fn_call fn el) := fresh_vars_el l el }
+where fresh_vars_el (l : list x) (el0 : list e) : Prop := {
+ fresh_vars_el l nil := True;
+ fresh_vars_el l (e1::el0) := fresh_vars_e l e1 /\ fresh_vars_el l el0 }.
 }}
 
 defns
