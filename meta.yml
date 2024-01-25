@@ -34,6 +34,12 @@ dependencies:
   description: |-
     [Ott Coq library](https://github.com/ott-lang/ott) 0.33 or later
 
+- opam:
+    name: coq-equations
+    version: '{>= "1.3"}'
+  description: |-
+    [Equations Coq library](https://github.com/mattam82/Coq-Equations) 1.3 or later
+
 tested_coq_opam_versions:
 - version: '8.18'
 - version: '8.17'
