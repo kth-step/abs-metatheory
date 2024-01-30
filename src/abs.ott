@@ -108,8 +108,12 @@ formula :: formula_ ::=
     {{ coq (Map.find [[x]] [[s]] = Some ([[t]])) }}
   | G ( fn ) = sig :: M :: G_fn_eq_sig
     {{ coq (Map.find [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
-  | fresh ( x1 , ... , xn , e ) :: M :: fresh
+  | fresh ( x1 , ... , xn , e ) :: M :: fresh_e
     {{ coq (fresh_vars_e [[x1 ... xn]] [[e]]) }}
+  | fresh ( x1 , ... , xn , s ) :: M :: fresh_s
+    {{ coq (fresh_vars_s [[x1 ... xn]] [[s]]) }}
+  | fresh ( x1 , ... , xn , e , s ) :: M :: fresh
+    {{ coq (fresh_vars [[x1 ... xn]] [[e]] [[s]]) }}
 
 embed
 {{ coq
@@ -142,6 +146,15 @@ Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
 where fresh_vars_el (l : list x) (el0 : list e) : Prop := {
  fresh_vars_el l nil := True;
  fresh_vars_el l (e1::el0) := fresh_vars_e l e1 /\ fresh_vars_el l el0 }.
+
+Fixpoint fresh_vars_s (l : list x) (s0 : s): Prop :=
+  match l with
+  | nil => True
+  | (y::ys) => ~ Map.In y s0 /\ fresh_vars_s ys s0
+  end.
+
+Definition fresh_vars (l : list x) (e0: e) (s0: s) : Prop :=
+  fresh_vars_s l s0 /\ fresh_vars_e l e0.
 }}
 
 defns
@@ -193,6 +206,6 @@ defn
   ------------------------------------------------------------------------------------------------------------- :: fun_exp
   F1 ... Fn , s |- fn ( e1 , ... , ei , e , e'1 , ... , e'j ) ~> s' |- fn ( e1 , ... , ei , e' , e'1 , ... , e'j )
 
-  fresh ( y1 , ... , yn , e )
+  fresh ( y1 , ... , yn , e , s)
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- :: fun_ground
   F1 ... Fi def T fn ( T1 x1 , ... , Tn xn ) = e ; F'1 ... F'j , s |- fn ( t1 , ... , tn ) ~> s [ y1 |-> t1 , ... , yn |-> tn ] |- e [ x1 |-> y1 , ... , xn |-> yn ]
