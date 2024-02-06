@@ -10,6 +10,10 @@ Import ListNotations.
 
 (** * ABS Functional Metatheory *)
 
+Section FunctionalMetatheory.
+
+Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fn), x_ <> fn_).
+
 Notation "G ⊢ e : T" := (typ_e G e T) (at level 5).
 Notation "G F⊢ F" := (typ_F G F) (at level 5).
 (* Notation "Fs , s ⊢ e ⇝ s' ⊢ e'" := (red_e Fs s e s' e') (at level 10). *)
@@ -26,6 +30,14 @@ Definition G_vdash_s (G5 : G) (s5 : s) :=
   Map.find x5 s5 = Some t5 ->
   Map.find x5 G5 = Some (ctxv_T T5) ->
   typ_e G5 (e_t t5) T5.
+
+(* sanity check *)
+Lemma empty_G_consistent: forall s0,
+  G_vdash_s (Map.empty ctxv) s0.
+Proof.
+  intros*.
+  inv H0.
+Qed.
 
 Notation "G1 G⊢ s1" := (G_vdash_s G1 s1) (at level 5).
 
@@ -57,14 +69,29 @@ Proof.
 Qed.
 
 (* some slightly ad-hoc equalities *)
-Lemma subst_fst_commutes: forall x0 s e_T_list,
-  map (fun pat_ : e * T => let (e_, _) := pat_ in e_)
-    (map (fun pat_ : e * T => let (e_, T_) := pat_ in (e_var_subst e_ [(x0, s)], T_)) e_T_list) =
-    map (fun e : e => e_var_subst e [(x0, s)]) (map (fun pat_ : e * T => let (e_, _) := pat_ in e_) e_T_list).
+Lemma subst_fst_commute: forall x0 x1 e_T_list,
+  map (fun x : e * T => let (e_, _) := let '(e_, T_) := x in (e_var_subst_one e_ x0 x1, T_) in e_) e_T_list =
+  (fix e_list_subst_one (es : list e) (x_ y_ : x) {struct es} : list e :=
+     match es with
+     | [] => fun _ _ : x => []
+     | e :: l => fun x_0 y_0 : x => e_var_subst_one e x_0 y_0 :: e_list_subst_one l x_0 y_0
+     end x_ y_) (map (fun pat_ : e * T => let (e_, _) := pat_ in e_) e_T_list) x0 x1.
+Proof.
+  induction e_T_list; auto.
+  destruct a.
+  simpl.
+  rewrite <- IHe_T_list.
+  reflexivity.
+Qed.
+
+Lemma subst_snd_commutes: forall x0 s e_T_list,
+  map (fun pat_ : e * T => let (_, T_) := pat_ in T_)
+    (map (fun pat_ : e * T => let (e_, T_) := pat_ in (e_var_subst_one e_ x0 s, T_)) e_T_list) =
+    map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list.
 Proof with auto.
   intros.
   induction e_T_list...
-  destruct a;cbn.
+  destruct a;cbn in *.
   rewrite IHe_T_list...
 Qed.
 
@@ -80,20 +107,73 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma e_var_subst_empty: forall e0, e_var_subst e0 [] = e0.
+(* this is 9.3.8 from Types and Programming Languages *)
+(* it has not yet proven useful *)
+Lemma subst_lemma_aux: forall (x0 x1:x) G0 e0 T0 T1,
+  typ_e (Map.add x0 (ctxv_T T1) G0) e0 T0 ->
+  typ_e G0 (e_var x1) T1 ->
+  typ_e G0 (e_var_subst_one e0 x0 x1) T0.
 Proof.
+  intros.
+  generalize dependent T0.
+  generalize dependent T1.
+  generalize dependent G0.
   eapply e_ott_ind with
-    (P_list_e:= fun es => map (fun e0 => e_var_subst e0 []) es = es);simpl;intros;auto.
-  { rewrite H. auto. }
-  induction e_l.
-  - rewrite H.
-    reflexivity.
-  - inv H0.
+      (n:=e0)
+      (P_list_e:= fun e_list => forall e0,
+                    In e0 e_list ->
+                    forall G0 T0 T1,
+                    typ_e (Map.add x0 (ctxv_T T1) G0) e0 T0 ->
+                    typ_e G0 (e_var x1) T1 ->
+                    typ_e G0 (e_var_subst e0 [(x0, x1)]) T0)
+  ;cbn; intros.
+  - inv H; constructor.
+  - inv H.
     simpl.
-    rewrite H.
-    rewrite 2 H2.
-    rewrite 2 H3.
-    reflexivity.
+    destruct (eq_x x5 x0); subst.
+    + apply Map.find_2 in H3.
+      apply MapFacts.add_mapsto_iff in H3.
+      destruct H3 as [(?&?) | (?&?)]; subst.
+      * inv H1.
+        assumption.
+      * contradiction.
+    + constructor.
+      apply Map.find_1.
+      eapply Map.add_3.
+      * apply not_eq_sym.
+        apply n.
+      * apply Map.find_2 in H3.
+        apply H3.
+  - inv H1.
+    rewrite <- subst_fst_commute.
+    replace (map (fun x : e * T => let (e_, _) := let '(e_, T_) := x in (e_var_subst_one e_ x0 x1, T_) in e_) e_T_list)
+      with
+        (map (fun pat_ : e * T => let (e_, _) := pat_ in e_)
+           (map (fun '(e_, T_) => (e_var_subst_one e_ x0 x1, T_)) e_T_list))
+    by apply map_map.
+    constructor.
+    + rewrite map_map.
+      intros.
+      apply in_map_iff in H1.
+      destruct H1 as ((?e_&?T_) & ? & ?).
+      inv H1.
+      eapply H.
+      * apply in_map_iff.
+        exists (e_0, T_).
+        split; eauto.
+      * apply H5.
+        apply in_map_iff.
+        exists (e_0, T_).
+        split; auto.
+      * apply H0.
+    + apply Map.find_1.
+      apply Map.find_2 in H7.
+      rewrite subst_snd_commutes.
+      eapply Map.add_3; eauto.
+  - inv H.
+  - inv H1.
+    + eapply H; eauto.
+    + eapply H0; eauto.
 Qed.
 
 Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
@@ -125,7 +205,7 @@ Proof with try easy.
       apply in_map_iff.
       exists (e_5, T_5).
       split...
-      apply in_combine_app with (2:=eq_refl)...
+      apply in_combine_split with (2:=eq_refl)...
     }
     pose proof H2 e_5 T_5 H5.
     destruct (IHreduction G5 s_well_typed F_well_typed _ H6) as (G' & G'extends & G'consistent & ?).
@@ -214,5 +294,29 @@ Proof with try easy.
         lia.
 
   - (* RED_FUN_CALL *)
-    admit.
+    intros.
+    set (fn_def:=(F_fn T_5 fn5 (map (fun '(T_, x_, _, _) => (T_, x_)) T_x_t_y_list) e5)).
+    pose proof utils.in_split F_list F'_list fn_def .
+    rewrite app_nil_r in *.
+    pose proof Forall_forall (typ_F G5) (F_list ++ [fn_def] ++ F'_list) as (? & _).
+    pose proof H1 F_well_typed fn_def H0 as fn_typed.
+    inv e0_type.
+    inv fn_typed.
+    rewrite H8 in H7.
+    inv H7.
+    assert (map (fun '(_,T_) => T_) e_T_list = map (fun '(T_, _, _, _) => T_) T_x_t_y_list). {
+      rewrite <- H4.
+      rewrite map_map.
+      apply map_eq.
+      intros [[[? ?] ?] ?].
+      reflexivity.
+    }
+    clear H4.
+    set (G':=(fold_right (fun '(T_, _, _, y) G0 => Map.add y (ctxv_T T_) G0) G5 T_x_t_y_list)).
+    exists G'.
+    splits.
+    + admit.
+    + admit.
+    + admit.
 Admitted.
+End FunctionalMetatheory.

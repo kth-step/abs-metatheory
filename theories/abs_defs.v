@@ -100,27 +100,19 @@ Fixpoint e_ott_ind (n:e) : P_e n :=
 end.
 
 End e_rect.
-Fixpoint get_val (k:x) (l:list(x*x)): option x :=
-  match l with
-  | nil => None
-  | (k', v) :: l' =>
-      match eq_x k k' with
-      | left _ => Some v
-      | _ => get_val k l'
-      end
-  end.
+Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
+ e_var_subst_one (e_t t) _ _ := e_t t;
+ e_var_subst_one (e_var x0) x_ y_ := if (eq_x x0 x_) then (e_var y_) else (e_var x0);
+ e_var_subst_one (e_fn_call fn0 arg_list) x_ y_ := e_fn_call fn0 (e_list_subst_one arg_list x_ y_) }
+where e_list_subst_one (es:list e) (x_ y_: x) : list e := {
+ e_list_subst_one nil _ _ := nil;
+ e_list_subst_one (e0::es) x_ y_ := e_var_subst_one e0 x_ y_ :: e_list_subst_one es x_ y_
+}.
 
-Fixpoint e_var_subst (e5:e) (l:list (x*x)) : e :=
-  match e5 with
-  | e_t t => e_t t
-  | e_var x =>
-      match get_val x l with
-              | None => e_var x
-              | Some y => e_var y
-              end
-  | e_fn_call fn e_list =>
-      e_fn_call fn (map (fun e => e_var_subst e l) e_list)
-  end.
+(* I would prefer not doing this, but sometimes I need it to compute *)
+Global Transparent e_var_subst_one.
+
+Definition e_var_subst (e5:e) (l:list (x*x)) : e := fold_right (fun '(x', y') e' => e_var_subst_one e' x' y') e5 l.
 
 Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
  fresh_vars_e _ (e_t _) := True;
