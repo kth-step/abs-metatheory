@@ -10,6 +10,16 @@ Tactic Notation "intros*" := repeat intro.
 Section ListLemmas.
   Context {X Y: Type}.
 
+  Lemma map_eq: forall (l: list X) (f g: X -> Y),
+      (forall x, f x = g x) ->
+      map f l = map g l.
+  Proof.
+    induction l; intros; auto.
+    simpl.
+    rewrite (H a).
+    erewrite (IHl); eauto.
+  Qed.
+
   Lemma combine_fst: forall (l1: list X) (l2: list Y),
       length l1 = length l2 ->
       map (fun pat_: (X*Y) => let (e_, _) := pat_ in e_) (combine l1 l2) = l1.
@@ -77,7 +87,16 @@ Section ListLemmas.
         rewrite IHl1; easy.
   Qed.
 
-  Lemma in_combine_app: forall (l: list (X*Y)) l1 l1' l2 l2' x y,
+  Lemma in_split: forall (l1 l2: list X) x,
+      In x (l1 ++ [x] ++ l2).
+  Proof.
+    induction l1; intros.
+    - left; auto.
+    - right.
+      apply IHl1.
+  Qed.
+
+  Lemma in_combine_split: forall (l: list (X*Y)) l1 l1' l2 l2' x y,
       length l1 = length l2 ->
       l = combine (l1 ++ [x] ++ l1') (l2 ++ [y] ++ l2') ->
       In (x, y) l.
