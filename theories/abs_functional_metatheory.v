@@ -41,6 +41,24 @@ Qed.
 
 Notation "G1 G⊢ s1" := (G_vdash_s G1 s1) (at level 5).
 
+(* the proof in the original ABS paper appeals to the following two properties in the RED_FUN_GROUND case*)
+(* however, I am not sure either holds without some extra assumptions *)
+(* (in particular uniqueness of the substituted variables and freshness wrt the typing context) *)
+Lemma fresh_subG: forall G0 s0 (sub_list: list (T*x*t*x)),
+  (* this should really be fresh wrt G0, but we don't actually have that so maybe these suffice? *)
+  G_vdash_s G0 s0 ->
+  fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
+  subG G0 (fold_right (fun '(T_,_,_,y_) G0 => Map.add y_ (ctxv_T T_) G0) G0 sub_list).
+Admitted.
+
+Lemma fresh_consistent: forall G0 s0 (sub_list: list (T*x*t*x)),
+  G_vdash_s G0 s0 ->
+  fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
+  G_vdash_s (fold_right (fun '(T_,_,_,y_) G0 => Map.add y_ (ctxv_T T_) G0) G0 sub_list)
+    (fold_right (fun '(_,_,t_,y_) s0 => Map.add y_ t_ s0) s0 sub_list).
+Proof.
+Admitted.
+
 Lemma subG_consistent: forall G1 G2 s0,
   subG G1 G2 -> G_vdash_s G2 s0 -> G_vdash_s G1 s0.
 Proof.
@@ -109,7 +127,7 @@ Qed.
 
 (* this is 9.3.8 from Types and Programming Languages *)
 (* it has not yet proven useful *)
-Lemma subst_lemma_aux: forall (x0 x1:x) G0 e0 T0 T1,
+Lemma subst_lemma_one: forall (x0 x1:x) G0 e0 T0 T1,
   typ_e (Map.add x0 (ctxv_T T1) G0) e0 T0 ->
   typ_e G0 (e_var x1) T1 ->
   typ_e G0 (e_var_subst_one e0 x0 x1) T0.
@@ -175,6 +193,39 @@ Proof.
     + eapply H; eauto.
     + eapply H0; eauto.
 Qed.
+
+Lemma subst_lemma: forall G0 e0 T0 (sub_list: list (T*x*t*x)),
+  (* idea: some wellformedness condition that ensures the two admits *)
+  typ_e (fold_right (fun '(T1, x0, _, _) G' => Map.add x0 (ctxv_T T1) G') G0 sub_list) e0 T0 ->
+  (forall x1 T1,
+    In (T1, x1) (map (fun '(T1, _, _, x1) => (T1, x1)) sub_list) ->
+    typ_e G0 (e_var x1) T1) ->
+  typ_e G0 (e_var_subst e0 (map (fun '(_, x0, _, x1) => (x0, x1)) sub_list)) T0.
+Proof.
+  intros.
+  generalize dependent G0.
+  induction sub_list; intros; auto.
+  destruct a as (((?T_&?x_)&?t_)&?y_).
+  simpl.
+  replace ((T_, x_, t_, y_) :: sub_list) with (sub_list ++ [(T_, x_, t_, y_)])
+    in H by admit.
+  (* if all the x0s are unique, then order does not matter *)
+  setoid_rewrite fold_right_app in H.
+  eapply subst_lemma_one.
+  - eapply IHsub_list; eauto.
+    intros.
+      assert (In (T1, x1) (map (fun '(T2, _, _, x2) => (T2, x2)) ((T_, x_, t_, y_)::sub_list))).
+      {right; auto. }
+      pose proof H0 x1 T1 H2.
+      inv H3.
+      constructor.
+      apply Map.find_1.
+      apply Map.add_2.
+      { admit. } (* not sure how to get rid of this *)
+      apply Map.find_2 in H6; auto.
+  - apply  H0.
+    left; eauto.
+Admitted.
 
 Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
   G_vdash_s G5 s5 ->
@@ -293,30 +344,22 @@ Proof with try easy.
         simpl.
         lia.
 
-  - (* RED_FUN_CALL *)
+  - (* RED_FUN_GROUND *)
     intros.
     set (fn_def:=(F_fn T_5 fn5 (map (fun '(T_, x_, _, _) => (T_, x_)) T_x_t_y_list) e5)).
     pose proof utils.in_split F_list F'_list fn_def .
     rewrite app_nil_r in *.
     pose proof Forall_forall (typ_F G5) (F_list ++ [fn_def] ++ F'_list) as (? & _).
     pose proof H1 F_well_typed fn_def H0 as fn_typed.
-    inv e0_type.
     inv fn_typed.
-    rewrite H8 in H7.
-    inv H7.
-    assert (map (fun '(_,T_) => T_) e_T_list = map (fun '(T_, _, _, _) => T_) T_x_t_y_list). {
-      rewrite <- H4.
-      rewrite map_map.
-      apply map_eq.
-      intros [[[? ?] ?] ?].
-      reflexivity.
-    }
-    clear H4.
-    set (G':=(fold_right (fun '(T_, _, _, y) G0 => Map.add y (ctxv_T T_) G0) G5 T_x_t_y_list)).
-    exists G'.
+    inv e0_type.
+    exists (fold_right (fun '(T_, _, _, y) G0 => Map.add y (ctxv_T T_) G0) G5 T_x_t_y_list).
     splits.
-    + admit.
-    + admit.
-    + admit.
+    + eapply fresh_subG; eauto.
+      apply H.
+    + rewrite <- fold_map.
+      apply fresh_consistent; eauto.
+      apply H.
+    + (* here the ABS paper appeals to type preservation under substitutions, but that seems like overkill*)
 Admitted.
 End FunctionalMetatheory.
