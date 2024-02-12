@@ -151,6 +151,17 @@ Section ListLemmas.
     reflexivity.
   Qed.
 
+  Lemma fold_map {A Z W: Type}: forall (f: W -> Z -> A -> A) (l: list (X*Y*Z*W)) a0,
+      fold_right (fun '(_, _, z, w) a => f w z a) a0 l =
+        fold_right (fun (xt : W * Z) a => f (fst xt) (snd xt) a) a0
+          (map (fun pat_ : X*Y*Z*W => let (p, y_) := pat_ in let (p0, t_) := p in let (_, _) := p0 in (y_, t_)) l).
+  Proof.
+    induction l; intros; eauto.
+    destruct a as [[[? ?] ?] ?].
+    simpl.
+    now rewrite IHl.
+  Qed.
+
   Lemma combine_map: forall (l: list (X*Y)),
       combine (map fst l) (map snd l) = l.
   Proof.
@@ -233,4 +244,5 @@ Section ListLemmas.
     exists left_list', mid', right_list'.
     apply EQ.
   Qed.
+
 End ListLemmas.
