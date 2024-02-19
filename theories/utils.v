@@ -20,6 +20,45 @@ Section ListLemmas.
     erewrite (IHl); eauto.
   Qed.
 
+  Lemma map_split {Z W: Type}: forall (l: list (Z*X)) (l2: list (X*Y*Z*W)),
+      map fst l = map (fun '(_, _, z, _) => z) l2 ->
+      map snd l = map (fun '(x, _, _, _) => x) l2 ->
+      l = map (fun '(x, _, z,_) => (z, x)) l2.
+  Proof.
+    induction l; intros.
+    - inv H.
+      symmetry in H2.
+      apply map_eq_nil in H2.
+      now subst.
+    - destruct a.
+      destruct l2.
+      + inv H.
+      + destruct p as (((?, ?), ?), ?).
+        inv H.
+        inv H0.
+        rewrite (IHl l2); auto.
+  Qed.
+
+  (* extremely ad-hoc*)
+  Lemma map_split' {Z Z' W: Type}: forall (l: list (Z'*X)) (l2: list (X*Y*Z*W)) (f: Z -> Z'),
+      map fst l = map (fun '(_, _, z, _) => f z) l2 ->
+      map snd l = map (fun '(x, _, _, _) => x) l2 ->
+      l = map (fun '(x, _, z,_) => (f z, x)) l2.
+  Proof.
+    induction l; intros.
+    - inv H.
+      symmetry in H2.
+      apply map_eq_nil in H2.
+      now subst.
+    - destruct a.
+      destruct l2.
+      + inv H.
+      + destruct p as (((?, ?), ?), ?).
+        inv H.
+        inv H0.
+        rewrite (IHl l2 f); auto.
+  Qed.
+
   Lemma combine_fst: forall (l1: list X) (l2: list Y),
       length l1 = length l2 ->
       map (fun pat_: (X*Y) => let (e_, _) := pat_ in e_) (combine l1 l2) = l1.

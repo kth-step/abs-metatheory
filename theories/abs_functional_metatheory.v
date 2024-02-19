@@ -13,6 +13,9 @@ Import ListNotations.
 Section FunctionalMetatheory.
 
 Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fn), x_ <> fn_).
+Hypothesis (vars_well_typed: forall (x_:x) (G0: G) T0,
+             Map.find x_ G0 = Some T0 ->
+             exists T_, T0 = ctxv_T T_).
 
 Notation "G ⊢ e : T" := (typ_e G e T) (at level 5).
 Notation "G F⊢ F" := (typ_F G F) (at level 5).
@@ -25,48 +28,150 @@ Definition subG (G1 G2 : G) : Prop :=
 
 Notation "G1 ⊆ G2" := (subG G1 G2) (at level 5).
 
-Definition G_vdash_s (G5 : G) (s5 : s) :=
- forall (x5 : x) (t5 : t) (T5 : T),
-  Map.find x5 s5 = Some t5 ->
-  Map.find x5 G5 = Some (ctxv_T T5) ->
-  typ_e G5 (e_t t5) T5.
+Lemma subG_refl: forall G0,
+  subG G0 G0.
+Proof. easy. Qed.
 
-(* sanity check *)
-Lemma empty_G_consistent: forall s0,
-  G_vdash_s (Map.empty ctxv) s0.
+Lemma subG_add: forall G0 G1 y T_,
+  subG G0 G1 ->
+  ~ Map.In y G0 ->
+  subG G0 (Map.add y T_ G1).
 Proof.
-  intros*.
-  inv H0.
+  intros.
+  intros ?x_ ?T_ ?.
+
+  destruct (eq_x y x_); subst.
+  - exfalso.
+    apply H0.
+    apply MapFacts.in_find_iff.
+    intro.
+    rewrite H1 in H2.
+    discriminate.
+  - apply Map.find_1.
+    apply MapFacts.add_neq_mapsto_iff; auto.
+    pose proof H x_ T_0 H1.
+    apply Map.find_2.
+    assumption.
 Qed.
+
+(* this is stricter than the ABS paper *)
+(* we require that any variables in the typing context also exist in the state *)
+Definition G_vdash_s (G5 : G) (s5 : s) :=
+ forall (x5 : x) (T5 : T),
+  Map.find x5 G5 = Some (ctxv_T T5) ->
+  exists t5,
+  Map.find x5 s5 = Some t5 /\ typ_e G5 (e_t t5) T5.
 
 Notation "G1 G⊢ s1" := (G_vdash_s G1 s1) (at level 5).
 
-(* the proof in the original ABS paper appeals to the following two properties in the RED_FUN_GROUND case*)
-(* however, I am not sure either holds without some extra assumptions *)
-(* (in particular uniqueness of the substituted variables and freshness wrt the typing context) *)
+(* how is this not in MapFacts? *)
+Lemma map_neq_none_is_some{elt:Type}: forall m x,
+  Map.find x m <> None ->
+  exists y, Map.find (elt:=elt) x m = Some y.
+Proof.
+  intros.
+  destruct (MapFacts.In_dec m x).
+  - inv i.
+    exists x0.
+    apply Map.find_1.
+    apply H0.
+  - apply MapFacts.not_find_in_iff in n.
+    rewrite n in H.
+    contradiction.
+Qed.
+
 Lemma fresh_subG: forall G0 s0 (sub_list: list (T*x*t*x)),
-  (* this should really be fresh wrt G0, but we don't actually have that so maybe these suffice? *)
   G_vdash_s G0 s0 ->
   fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
+  distinct (map (fun '(_,_,_,y)=>y) sub_list) ->
   subG G0 (fold_right (fun '(T_,_,_,y_) G0 => Map.add y_ (ctxv_T T_) G0) G0 sub_list).
-Admitted.
+Proof with try easy.
+  intros.
+  induction sub_list...
+  destruct a as (((?T_, ?x_), ?t_), y).
+  inv H1.
+  inv H0.
+  pose proof IHsub_list H2 H5.
+  cbn.
+  apply subG_add; auto.
+  intro.
+
+  apply MapFacts.in_find_iff in H3.
+  apply MapFacts.not_find_in_iff in H1.
+  pose proof map_neq_none_is_some _ _ H3 as (?T_, ?).
+  pose proof vars_well_typed _ _ _ H6 as (?T_, ->).
+  pose proof H _ _ H6 as (?t_, (?, _)).
+  rewrite H1 in H7.
+  discriminate.
+Qed.
 
 Lemma fresh_consistent: forall G0 s0 (sub_list: list (T*x*t*x)),
   G_vdash_s G0 s0 ->
+  (forall T_ t_, In (T_, t_) (map (fun '(T_, _, t_, _) => (T_, t_)) sub_list) ->
+            typ_e G0 (e_t t_) T_) ->
   fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
+  distinct (map (fun '(_,_,_,y)=>y) sub_list) ->
   G_vdash_s (fold_right (fun '(T_,_,_,y_) G0 => Map.add y_ (ctxv_T T_) G0) G0 sub_list)
     (fold_right (fun '(_,_,t_,y_) s0 => Map.add y_ t_ s0) s0 sub_list).
-Proof.
-Admitted.
+Proof with try easy.
+  intros.
+  induction sub_list...
+  destruct a as (((?T_, ?x_), ?t_), y).
+  inv H1.
+  inv H2.
+
+  cbn.
+  intros ?y ?T_ ?.
+  destruct (eq_x y y0); subst.
+  - exists t_.
+    split...
+    + apply Map.find_1.
+      now apply Map.add_1.
+    + assert (T_ = T_0).
+      {
+        apply Map.find_2 in H1.
+        apply MapFacts.add_mapsto_iff in H1.
+        destruct H1 as [(_, ?) | (?, ?)].
+        + now inv H1.
+        + exfalso.
+          now apply H1.
+      }
+      assert (In (T_0, t_) (map (fun '(T_, _, t_, _) => (T_, t_)) ((T_, x_, t_, y0) :: sub_list)))
+        by (left; now rewrite H2).
+      specialize (H0 _ _ H5).
+      inv H0; constructor.
+  - apply Map.find_2 in H1.
+    apply Map.add_3 in H1; auto.
+    apply Map.find_1 in H1.
+    assert (forall (T_ : T) (t_ : t),
+             In (T_, t_) (map (fun '(T_0, _, t_0, _) => (T_0, t_0)) sub_list) ->
+             typ_e G0 (e_t t_) T_).
+    {
+      intros.
+      apply H0.
+      right.
+      assumption.
+    }
+    pose proof IHsub_list H2 H4 H7 _ _ H1 as (?t_, (?, ?)).
+    exists t_0.
+    split...
+    + apply Map.find_1.
+      apply Map.add_2; auto.
+      apply Map.find_2; assumption.
+    + inv H8; constructor.
+Qed.
 
 Lemma subG_consistent: forall G1 G2 s0,
   subG G1 G2 -> G_vdash_s G2 s0 -> G_vdash_s G1 s0.
 Proof.
   intros.
-  intros x_ t_ T_ ? ?.
-  apply H in H2.
-  pose proof H0 x_ t_ T_ H1 H2.
-  inv H3;constructor.
+  intros x_ t_ ?.
+
+  pose proof H _ _ H1.
+  pose proof H0 _ _ H2 as (?t, (?, ?)).
+  exists t.
+  split; auto.
+  inv H4;constructor.
 Qed.
 
 Lemma subG_type: forall G1 G2 e0 T0,
@@ -194,37 +299,12 @@ Proof.
     + eapply H0; eauto.
 Qed.
 
-Lemma subst_lemma: forall G0 e0 T0 (sub_list: list (T*x*t*x)),
-  (* idea: some wellformedness condition that ensures the two admits *)
-  typ_e (fold_right (fun '(T1, x0, _, _) G' => Map.add x0 (ctxv_T T1) G') G0 sub_list) e0 T0 ->
-  (forall x1 T1,
-    In (T1, x1) (map (fun '(T1, _, _, x1) => (T1, x1)) sub_list) ->
-    typ_e G0 (e_var x1) T1) ->
-  typ_e G0 (e_var_subst e0 (map (fun '(_, x0, _, x1) => (x0, x1)) sub_list)) T0.
-Proof.
-  intros.
-  generalize dependent G0.
-  induction sub_list; intros; auto.
-  destruct a as (((?T_&?x_)&?t_)&?y_).
-  simpl.
-  replace ((T_, x_, t_, y_) :: sub_list) with (sub_list ++ [(T_, x_, t_, y_)])
-    in H by admit.
-  (* if all the x0s are unique, then order does not matter *)
-  setoid_rewrite fold_right_app in H.
-  eapply subst_lemma_one.
-  - eapply IHsub_list; eauto.
-    intros.
-      assert (In (T1, x1) (map (fun '(T2, _, _, x2) => (T2, x2)) ((T_, x_, t_, y_)::sub_list))).
-      {right; auto. }
-      pose proof H0 x1 T1 H2.
-      inv H3.
-      constructor.
-      apply Map.find_1.
-      apply Map.add_2.
-      { admit. } (* not sure how to get rid of this *)
-      apply Map.find_2 in H6; auto.
-  - apply  H0.
-    left; eauto.
+(* pipe dream: might need some stronger assumptions*)
+Lemma subst_lemma: forall (T_x_t_y_list:list (T*x*t*x)) G0 e0 T0,
+  typ_e (fold_right (fun '(T_, x_, _, _) (G0 : G) => Map.add x_ (ctxv_T T_) G0) G0 T_x_t_y_list) e0 T0 ->
+  typ_e (fold_right (fun '(T_, _, _, y) (G0 : G) => Map.add y (ctxv_T T_) G0) G0 T_x_t_y_list)
+    (e_var_subst e0 (map (fun '(_, x_, _, y_) => (x_, y_)) T_x_t_y_list))
+    T0.
 Admitted.
 
 Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
@@ -243,7 +323,10 @@ Proof with try easy.
   - intros.
     exists G5; splits...
     inv e0_type.
-    apply (s_well_typed _ _ _ H H2).
+    destruct (s_well_typed x5 T0 H2) as (?, (?, ?)).
+    rewrite H in H0.
+    inv H0.
+    assumption.
 
   - (* RED_FUN_EXPR *)
     intros.
@@ -353,13 +436,47 @@ Proof with try easy.
     pose proof H1 F_well_typed fn_def H0 as fn_typed.
     inv fn_typed.
     inv e0_type.
+    destruct H as ((?, ?), ?).
+    assert (e_T_list = map (fun '(T_, _, t_, _) => (e_t t_, T_)) T_x_t_y_list).
+    {
+      rewrite H5 in H9.
+      inv H9.
+      eapply map_split'.
+      - replace (map fst e_T_list) with (map (fun pat_ : e * T => let (e_, _) := pat_ in e_) e_T_list) by easy.
+        rewrite H3.
+        apply map_ext.
+        easy.
+      - replace (map snd e_T_list) with (map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list) by easy.
+        rewrite <- H10.
+        rewrite map_map.
+        apply map_ext.
+        intros.
+        now destruct a as (((?, ?), ?), ?).
+    }
     exists (fold_right (fun '(T_, _, _, y) G0 => Map.add y (ctxv_T T_) G0) G5 T_x_t_y_list).
     splits.
     + eapply fresh_subG; eauto.
-      apply H.
     + rewrite <- fold_map.
       apply fresh_consistent; eauto.
-      apply H.
-    + (* here the ABS paper appeals to type preservation under substitutions, but that seems like overkill*)
-Admitted.
+      (* some slightly silly reshuffling *)
+      intros.
+      apply in_map_iff in H10.
+      destruct H10 as (Txty, (?, ?)).
+      apply H6.
+      rewrite H7.
+      rewrite map_map.
+      apply in_map_iff.
+      exists Txty.
+      split...
+      destruct Txty as (((?, ?), ?), ?).
+      now inv H10.
+
+(* here the ABS paper appeals to type preservation under substitutions, but that seems like overkill*)
+    + rewrite H5 in H9.
+      inv H9.
+      apply subst_lemma.
+      rewrite <- fold_map_reshuffle.
+      apply H8.
+Qed.
+
 End FunctionalMetatheory.
