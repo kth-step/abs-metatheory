@@ -114,6 +114,8 @@ formula :: formula_ ::=
     {{ coq (fresh_vars_s [[x1 ... xn]] [[s]]) }}
   | fresh ( x1 , ... , xn , e , s ) :: M :: fresh
     {{ coq (fresh_vars [[x1 ... xn]] [[e]] [[s]]) }}
+  | well_formed ( x1 , ... , xn , e , s ) :: M :: well_formed
+    {{ coq (well_formed [[e]] [[s]] [[x1 ... xn]]) }}
 
 embed
 {{ coq
@@ -147,6 +149,15 @@ Fixpoint fresh_vars_s (l : list x) (s0 : s): Prop :=
 
 Definition fresh_vars (l : list x) (e0: e) (s0: s) : Prop :=
   fresh_vars_s l s0 /\ fresh_vars_e l e0.
+
+Inductive distinct: list x -> Prop :=
+ | distinct_nil: distinct nil
+ | distinct_cons: forall y ys,
+      ~ In y ys ->
+     distinct ys ->
+     distinct (y::ys).
+
+Definition well_formed (e0: e) (s0: s) (l:list x) : Prop := fresh_vars l e0 s0 /\ distinct l.
 }}
 
 defns
@@ -198,6 +209,6 @@ defn
   ------------------------------------------------------------------------------------------------------------- :: fun_exp
   F1 ... Fn , s |- fn ( e1 , ... , ei , e , e'1 , ... , e'j ) ~> s' |- fn ( e1 , ... , ei , e' , e'1 , ... , e'j )
 
-  fresh ( y1 , ... , yn , e , s)
+  well_formed (y1 , ... , yn , e, s)
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- :: fun_ground
   F1 ... Fi def T fn ( T1 x1 , ... , Tn xn ) = e ; F'1 ... F'j , s |- fn ( t1 , ... , tn ) ~> s [ y1 |-> t1 , ... , yn |-> tn ] |- e [ x1 |-> y1 , ... , xn |-> yn ]
