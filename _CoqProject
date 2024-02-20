@@ -3,4 +3,5 @@
 -arg -w -arg -deprecated-hint-without-locality
 
 theories/abs_defs.v
+theories/abs_examples.v
 theories/abs_functional_metatheory.v
