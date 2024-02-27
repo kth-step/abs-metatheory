@@ -33,6 +33,5 @@ Proof.
   unfold e_call_const_5.
   replace [] with (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => e_ end ) [])
     by auto.
-  apply typ_func_expr;
-    easy.
+  by apply typ_func_expr.
 Qed.
