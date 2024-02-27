@@ -7,6 +7,14 @@ Ltac splits := repeat split.
 Ltac inv H :=inversion H ; subst; clear H.
 Tactic Notation "intros*" := repeat intro.
 
+Ltac forward H :=
+  match type of H with
+  | ?x -> _ =>
+      let name := fresh in assert x as name; [| specialize (H name); clear name]
+  end.
+Tactic Notation "forward" ident(H) :=
+  forward H.
+
 Section ListLemmas.
   Context {X Y: Type}.
 
