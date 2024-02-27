@@ -5,6 +5,9 @@ From Coq Require Import List
   FSets.FMapFacts
   Lia.
 
+From Equations Require Import Equations.
+
+Require Import FMapList.
 Module MapFacts := FSets.FMapFacts.Facts Map.
 Import ListNotations.
 
@@ -54,6 +57,26 @@ Proof.
     assumption.
 Qed.
 
+Lemma subG_add_2: forall G0 G1 y T_,
+  subG G0 G1 ->
+  Map.find y G0 = Some T_ ->
+  subG G0 (Map.add y T_ G1).
+Proof.
+  intros.
+  intros ?x_ ?T_ ?.
+
+  destruct (eq_x y x_); subst.
+  - rewrite H0 in H1.
+    inv H1.
+    apply Map.find_1.
+    now apply Map.add_1.
+  - apply Map.find_1.
+    apply MapFacts.add_neq_mapsto_iff; auto.
+    pose proof H x_ T_0 H1.
+    apply Map.find_2.
+    assumption.
+Qed.
+
 (* this is stricter than the ABS paper *)
 (* we require that any variables in the typing context also exist in the state *)
 Definition G_vdash_s (G5 : G) (s5 : s) :=
@@ -83,7 +106,7 @@ Qed.
 Lemma fresh_subG: forall G0 s0 (sub_list: list (T*x*t*x)),
   G_vdash_s G0 s0 ->
   fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
-  distinct (map (fun '(_,_,_,y)=>y) sub_list) ->
+  NoDup (map (fun '(_,_,_,y)=>y) sub_list) ->
   subG G0 (fold_right (fun '(T_,_,_,y_) G0 => Map.add y_ (ctxv_T T_) G0) G0 sub_list).
 Proof with try easy.
   intros.
@@ -110,7 +133,7 @@ Lemma fresh_consistent: forall G0 s0 (sub_list: list (T*x*t*x)),
   (forall T_ t_, In (T_, t_) (map (fun '(T_, _, t_, _) => (T_, t_)) sub_list) ->
             typ_e G0 (e_t t_) T_) ->
   fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
-  distinct (map (fun '(_,_,_,y)=>y) sub_list) ->
+  NoDup (map (fun '(_,_,_,y)=>y) sub_list) ->
   G_vdash_s (fold_right (fun '(T_,_,_,y_) G0 => Map.add y_ (ctxv_T T_) G0) G0 sub_list)
     (fold_right (fun '(_,_,t_,y_) s0 => Map.add y_ t_ s0) s0 sub_list).
 Proof with try easy.
@@ -250,9 +273,9 @@ Proof.
                     typ_e G0 (e_var x1) T1 ->
                     typ_e G0 (e_var_subst e0 [(x0, x1)]) T0)
   ;cbn; intros.
-  - inv H; constructor.
+  - inv H; simp e_var_subst_one; constructor.
   - inv H.
-    simpl.
+    simp e_var_subst_one.
     destruct (eq_x x5 x0); subst.
     + apply Map.find_2 in H3.
       apply MapFacts.add_mapsto_iff in H3.
@@ -268,6 +291,7 @@ Proof.
       * apply Map.find_2 in H3.
         apply H3.
   - inv H1.
+    simp e_var_subst_one.
     rewrite <- subst_fst_commute.
     replace (map (fun x : e * T => let (e_, _) := let '(e_, T_) := x in (e_var_subst_one e_ x0 x1, T_) in e_) e_T_list)
       with
@@ -299,13 +323,408 @@ Proof.
     + eapply H0; eauto.
 Qed.
 
-(* pipe dream: might need some stronger assumptions*)
-Lemma subst_lemma: forall (T_x_t_y_list:list (T*x*t*x)) G0 e0 T0,
-  typ_e (fold_right (fun '(T_, x_, _, _) (G0 : G) => Map.add x_ (ctxv_T T_) G0) G0 T_x_t_y_list) e0 T0 ->
-  typ_e (fold_right (fun '(T_, _, _, y) (G0 : G) => Map.add y (ctxv_T T_) G0) G0 T_x_t_y_list)
-    (e_var_subst e0 (map (fun '(_, x_, _, y_) => (x_, y_)) T_x_t_y_list))
-    T0.
+Lemma subst_term: forall t sub,
+  e_var_subst (e_t t) sub = (e_t t).
+Proof.
+  induction sub.
+  - trivial.
+  - destruct a.
+    simpl.
+    rewrite IHsub.
+    now simp e_var_subst_one.
+Qed.
+
+Definition replace_var (x0:x) (sub:list(x*x)) :=
+ fold_right (fun '(x_, y_) x0 => if (eq_x x0 x_) then y_ else x0) x0 sub.
+
+Lemma subst_var: forall x0 sub,
+  e_var_subst (e_var x0) sub = e_var (replace_var x0 sub).
+Proof.
+  induction sub.
+  - trivial.
+  - destruct a; simpl.
+    rewrite IHsub.
+    simp e_var_subst_one.
+    destruct (eq_x (replace_var x0 sub)); subst; eauto.
+Qed.
+
+Lemma e_list_subst_map: forall x0 y0 e_list,
+  e_list_subst_one e_list x0 y0 = map (fun e_ => e_var_subst_one e_ x0 y0) e_list.
+Proof.
+  induction e_list; [easy|];
+  destruct a;
+    simpl;
+    now rewrite IHe_list.
+Qed.
+
+Lemma subst_fn: forall fn0 sub e_list,
+  e_var_subst (e_fn_call fn0 e_list) sub = (e_fn_call fn0 (map (fun e' => e_var_subst e' sub) e_list)).
+Proof.
+  induction sub; intros.
+  - simpl.
+    now rewrite map_id.
+  - destruct a.
+    simpl.
+    rewrite IHsub.
+    simp e_var_subst_one.
+    now rewrite e_list_subst_map, map_map.
+Qed.
+
+Lemma e_list_subst: forall el x0 y0,
+  e_list_subst_one el x0 y0 = map (fun e => e_var_subst_one e x0 y0) el.
+Proof.
+  induction el; intros.
+  - trivial.
+  - simpl.
+    now rewrite IHel.
+Qed.
+
+Lemma e_list_fresh: forall e0 ys el,
+  fresh_vars_el ys el ->
+  In e0 el ->
+  fresh_vars_e ys e0.
+Proof.
+  induction el.
+  - easy.
+  - simpl; intros.
+    destruct H0; subst.
+    + now destruct H.
+    + destruct H.
+      apply IHel; eauto.
+Qed.
+
+Lemma fresh_vars_first: forall e0 y ys,
+  fresh_vars_e (y::ys) e0 -> fresh_vars_e [y] e0.
+Proof.
+  induction e0 using e_ott_ind
+    with (P_list_e := fun e_list =>
+                        forall e0 y ys,
+                        In e0 e_list ->
+                        fresh_vars_e (y::ys) e0 -> fresh_vars_e [y] e0);
+     intros; try easy.
+  - simp fresh_vars_e in *.
+    intro.
+    inv H0.
+    + apply H.
+    now left.
+    + inv H1.
+  - simp fresh_vars_e in *.
+    induction e_list.
+    + easy.
+    + inv H.
+      split.
+      * eapply IHe0; eauto.
+        now left.
+      * eapply IHe_list; eauto.
+        intros; eapply IHe0; eauto.
+        now right.
+  - inv H.
+    + eapply IHe0; eauto.
+    + eapply IHe1; eauto.
+Qed.
+
+Lemma fresh_monotone_e: forall e0 y ys,
+  fresh_vars_e (y::ys) e0 -> fresh_vars_e ys e0.
+Proof.
+  induction e0 using e_ott_ind
+    with (P_list_e := fun e_list =>
+                        forall e0 y ys,
+                        In e0 e_list ->
+                        fresh_vars_e (y::ys) e0 -> fresh_vars_e ys e0);
+     intros; try easy.
+  - simp fresh_vars_e in *.
+    intro.
+    apply H.
+    right.
+    assumption.
+  - simp fresh_vars_e in *.
+    induction e_list.
+    + easy.
+    + inv H.
+      split.
+      * eapply IHe0; eauto.
+        now left.
+      * apply IHe_list; eauto.
+        intros; eapply IHe0; eauto.
+        now right.
+  - inv H.
+    + eapply IHe0; eauto.
+    + eapply IHe1; eauto.
+Qed.
+
+Lemma map_add_comm{E:Type}: forall m key key' elt elt',
+  key <> key' -> Map.Equal (Map.add (elt:=E) key elt (Map.add key' elt' m)) (Map.add key' elt' (Map.add key elt m)).
+Proof.
+  intros.
+  intro.
+  destruct (Map.find y m) eqn:?.
+  - destruct (eq_x y key), (eq_x y key'); subst;
+      erewrite 2 Map.find_1; eauto;
+      (* this should just be "eauto with map", but I can't seem to import the hint database *)
+      try (apply Map.add_2; eauto; now apply Map.add_1);
+      try (now apply Map.add_1; eauto);
+      try (repeat (apply Map.add_2; eauto); now apply Map.find_2; eauto).
+  - destruct (eq_x y key), (eq_x y key'); subst.
+    + contradiction.
+    + erewrite 2 Map.find_1; eauto.
+      * apply Map.add_2; eauto.
+        now apply Map.add_1.
+      * now apply Map.add_1.
+    + erewrite 2 Map.find_1; eauto.
+      * now apply Map.add_1.
+      * apply Map.add_2; eauto.
+        now apply Map.add_1.
+
+    (* there has to be a cleaner way to do this case?? *)
+    + replace (Map.find (elt:=E) y (Map.add key elt (Map.add key' elt' m))) with (@None E).
+      replace (Map.find (elt:=E) y (Map.add key' elt' (Map.add key elt m))) with (@None E).
+      reflexivity.
+      * symmetry.
+        apply MapFacts.not_find_in_iff in Heqo.
+        apply MapFacts.not_find_in_iff.
+        intro.
+        inv H0.
+        apply Heqo.
+        exists x.
+        eapply Map.add_3; eauto.
+        eapply Map.add_3; eauto.
+      * symmetry.
+        apply MapFacts.not_find_in_iff in Heqo.
+        apply MapFacts.not_find_in_iff.
+        intro.
+        inv H0.
+        apply Heqo.
+        exists x.
+        eapply Map.add_3; eauto.
+        eapply Map.add_3; eauto.
+Qed.
+
+Lemma fold_not_in: forall G0 y (T_x_t_y_list: list (T*x*t*x)),
+  ~ Map.In y G0 ->
+  ~ In y (map (fun '(_, _, _, y') => y') T_x_t_y_list) ->
+  ~ Map.In y (fold_right (fun '(T_, _, _, y) (G0 : G) => Map.add y (ctxv_T T_) G0) G0 T_x_t_y_list).
+Proof.
+  induction T_x_t_y_list as [ | (((?T_, ?x_), ?t_), ?y) T_x_t_y_list IH ]; [easy|].
+  simpl; intros ? ? ?.
+  destruct (eq_x y y0); subst.
+  - apply H0.
+    now left.
+  - apply MapFacts.add_in_iff in H1.
+    inv H1.
+    + apply H0.
+      now left.
+    + apply IH; eauto.
+Qed.
+
+Lemma fold_add_comm: forall G0 y T_ (upd: list (T*x*t*x)),
+  ~ In y (map (fun '(_,_,_, y) => y) upd) ->
+  Map.add y (ctxv_T T_) (fold_right (fun '(T_,_,_, y) G0 => Map.add y (ctxv_T T_) G0) G0 upd)
+  = (fold_right (fun '(T_,_,_, y) G0 => Map.add y (ctxv_T T_) G0) (Map.add y (ctxv_T T_) G0) upd).
 Admitted.
+
+Lemma same_type_sub: forall (sub_list: list (x*x)) G0 e0 T0,
+    typ_e G0 e0 T0 ->
+    (forall x0 y0 T0,
+      In (x0, y0) sub_list ->
+      Map.find x0 G0 = Some T0 ->
+      Map.find y0 G0 = Some T0) ->
+    typ_e G0 (e_var_subst e0 sub_list) T0.
+Proof.
+  {
+  intros.
+  generalize dependent T0.
+  eapply e_ott_ind with
+      (n:= e0)
+      (P_list_e:= fun e_list => forall e0 T0,
+                    In e0 e_list ->
+                    typ_e G0 e0 T0 ->
+                    typ_e G0 (e_var_subst e0 sub_list) T0)
+  ; intros.
+  - rewrite subst_term.
+    simp e_var_subst_one.
+  - rewrite subst_var.
+    constructor.
+    induction sub_list.
+    + inv H.
+      now simpl.
+    + destruct a.
+      simpl.
+      destruct (eq_x (replace_var x5 sub_list) x); subst.
+      * eapply H0; eauto.
+        -- now left.
+        -- apply IHsub_list; eauto.
+           intros.
+           eapply H0; eauto.
+           now right.
+      * eapply IHsub_list; eauto.
+        intros.
+        eapply H0; eauto.
+        now right.
+  - inv H1.
+    rewrite subst_fn.
+    rewrite map_map.
+    replace (map (fun x : e * T => e_var_subst (let (e_, _) := x in e_) sub_list) e_T_list)
+      with (map (fun pat_:e*T => let (e, _) := pat_ in e) (map (fun '(e, T) => (e_var_subst e sub_list, T)) e_T_list))
+      by (rewrite map_map; apply map_ext; now intros (?, ?)).
+    constructor.
+    + intros.
+      apply in_map_iff in H1.
+      destruct H1 as ((?e, ?T), (?, ?)).
+      inv H1.
+      apply in_map_iff in H2.
+      destruct H2 as ((?e_, ?T_), (?, ?)).
+      inv H1.
+      apply H.
+      * apply in_map_iff.
+        exists (e_0, T_).
+        split; eauto.
+      * apply H5.
+        apply in_map_iff.
+        exists (e_0, T_).
+        split; eauto.
+    + now replace (map (fun pat_ : e * T => let (_, T_) := pat_ in T_) (map (fun '(e, T) => (e_var_subst e sub_list, T)) e_T_list))
+        with(map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list)
+      by (rewrite map_map; apply map_ext; now intros (?, ?)).
+  - inv H.
+  - inv H2.
+    + now apply H.
+    + now apply H1.
+  }
+
+Qed.
+
+Lemma subst_lemma_one_alt: forall G0 x0 y0 e0 Ai A,
+  typ_e (Map.add x0 Ai G0) e0 A ->
+  fresh_vars_e [y0] e0 ->
+  typ_e (Map.add y0 Ai G0) (e_var_subst_one e0 x0 y0) A.
+Proof.
+  {
+    intros.
+    generalize dependent A.
+    revert H0.
+    apply e_ott_ind with
+        (n:=e0)
+        (P_list_e:= fun e_list =>
+                      forall e0 A,
+                      In e0 e_list ->
+                      fresh_vars_e [y0] e0 ->
+                      typ_e (Map.add x0 Ai G0) e0 A ->
+                      typ_e (Map.add y0 Ai G0) (e_var_subst_one e0 x0 y0) A);
+      intros.
+    - simp e_var_subst_one.
+      inv H; constructor.
+    - simp e_var_subst_one.
+      inv H.
+      apply Map.find_2 in H3.
+      apply MapFacts.add_mapsto_iff in H3.
+      destruct H3 as [(?,?)|(?,?)]; subst.
+      + destruct (eq_x x5 x5); subst.
+        * constructor.
+          apply Map.find_1.
+          now apply Map.add_1.
+        * contradiction.
+
+      + destruct (eq_x x5 x0); subst.
+        * contradiction.
+        * destruct (eq_x x5 y0); subst.
+          -- simp fresh_vars_e in H0.
+             exfalso.
+             apply H0.
+             now left.
+          -- constructor.
+             apply Map.find_1.
+             apply Map.add_2; eauto.
+    - simp e_var_subst_one.
+      inv H1.
+      replace (e_list_subst_one (map (fun pat_ : e * T => let (e_, _) := pat_ in e_) e_T_list) x0 y0)
+        with (map (fun pat_:e*T => let (e, _) := pat_ in e) (map (fun '(e, T) => (e_var_subst_one e x0 y0, T)) e_T_list))
+        by (rewrite e_list_subst_map;
+            rewrite 2 map_map;
+            apply map_ext;
+            now intros (?,?)).
+      constructor.
+      + intros.
+        apply in_map_iff in H1.
+        destruct H1 as ((?e, ?T), (?, ?)).
+        inv H1.
+        apply in_map_iff in H2.
+        destruct H2 as ((?e_, ?T_), (?, ?)).
+        inv H1.
+        apply H.
+        * apply in_map_iff.
+          exists (e_0, T_).
+          split; eauto.
+        * simp fresh_vars_e in H0.
+          eapply e_list_fresh.
+          apply H0.
+          apply in_map_iff.
+          eexists (e_0, T_).
+          split; auto.
+        * apply H5.
+          apply in_map_iff.
+          exists (e_0, T_).
+          split; eauto.
+      + replace (map (fun pat_ : e * T => let (_, T_) := pat_ in T_) (map (fun '(e, T) => (e_var_subst_one e x0 y0, T)) e_T_list))
+          with(map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list)
+          by (rewrite map_map; apply map_ext; now intros (?, ?)).
+
+        apply Map.find_2 in H7.
+        apply MapFacts.add_mapsto_iff in H7.
+        destruct H7 as [(?,?)|(?,?)].
+        * exfalso.
+          apply (vars_fs_distinct _ _ H1).
+        * apply Map.find_1.
+          apply Map.add_2; eauto.
+    - inv H.
+    - destruct H1; subst.
+      + apply H; eauto.
+      + apply H0; eauto.
+
+  }
+Qed.
+
+Lemma fresh_subst_NoDup: forall e0 y sub,
+  fresh_vars_e [y] e0 ->
+  ~ In y (map (fun '(_, y) => y) sub) ->
+  fresh_vars_e [y] (e_var_subst e0 sub).
+Admitted.
+
+(* pipe dream: might need some stronger assumptions*)
+Lemma subst_lemma: forall (T_x_t_y_list:list (T*x*t*x)) G0 e0 A,
+  typ_e (fold_right (fun '(Ai, x_, _, _) (G0 : G) => Map.add x_ (ctxv_T Ai) G0) G0 T_x_t_y_list) e0 A ->
+  NoDup (map (fun '(_, _, _, y) => y) T_x_t_y_list) ->
+  (* needed? *)
+  fresh_vars_e (map (fun '(_, _, _, y) => y) T_x_t_y_list) e0 ->
+  typ_e (fold_right (fun '(Ai, _, _, y) (G0 : G) => Map.add y (ctxv_T Ai) G0) G0 T_x_t_y_list)
+    (e_var_subst e0 (map (fun '(_, x_, _, y_) => (x_, y_)) T_x_t_y_list)) A.
+Proof.
+  intros.
+  generalize dependent G0.
+  induction T_x_t_y_list; intros.
+  - easy.
+  - destruct a as (((?T_,?x_),?t_),?y).
+    unfold e_var_subst.
+    simpl.
+    inv H0.
+    apply subst_lemma_one_alt.
+    + replace (fold_right (fun '(x', y') (e' : e) => e_var_subst_one e' x' y') e0 (map (fun '(_, x_, _, y_) => (x_, y_)) T_x_t_y_list))
+        with (e_var_subst e0 (map (fun '(_, x_, _, y_) => (x_, y_)) T_x_t_y_list)) by auto.
+      simpl in H, H1.
+      apply fresh_monotone_e in H1.
+      admit.
+
+    + apply fresh_vars_first in H1.
+      apply fresh_subst_NoDup; eauto.
+      intro.
+      apply H4.
+      rewrite map_map in H0.
+      apply in_map_iff in H0.
+      destruct H0 as ((((?,?),?), ?), (?, ?)); subst.
+      apply in_map_iff.
+      eexists.
+      split; now eauto.
+Admitted.
+
 
 Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
   G_vdash_s G5 s5 ->
@@ -474,7 +893,7 @@ Proof with try easy.
 (* here the ABS paper appeals to type preservation under substitutions, but that seems like overkill*)
     + rewrite H5 in H9.
       inv H9.
-      apply subst_lemma.
+      apply subst_lemma; auto.
       rewrite <- fold_map_reshuffle.
       apply H8.
 Qed.

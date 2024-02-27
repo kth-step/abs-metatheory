@@ -109,9 +109,6 @@ where e_list_subst_one (es:list e) (x_ y_: x) : list e := {
  e_list_subst_one (e0::es) x_ y_ := e_var_subst_one e0 x_ y_ :: e_list_subst_one es x_ y_
 }.
 
-(* I would prefer not doing this, but sometimes I need it to compute *)
-Global Transparent e_var_subst_one.
-
 Definition e_var_subst (e5:e) (l:list (x*x)) : e := fold_right (fun '(x', y') e' => e_var_subst_one e' x' y') e5 l.
 
 Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
@@ -131,14 +128,7 @@ Fixpoint fresh_vars_s (l : list x) (s0 : s): Prop :=
 Definition fresh_vars (l : list x) (e0: e) (s0: s) : Prop :=
   fresh_vars_s l s0 /\ fresh_vars_e l e0.
 
-Inductive distinct: list x -> Prop :=
- | distinct_nil: distinct nil
- | distinct_cons: forall y ys,
-      ~ In y ys ->
-     distinct ys ->
-     distinct (y::ys).
-
-Definition well_formed (e0: e) (s0: s) (l:list x) : Prop := fresh_vars l e0 s0 /\ distinct l.
+Definition well_formed (e0: e) (s0: s) (l:list x) : Prop := fresh_vars l e0 s0 /\ NoDup l.
 
 (** definitions *)
 
