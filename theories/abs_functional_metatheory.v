@@ -108,24 +108,25 @@ Lemma fresh_subG: forall G0 s0 (sub_list: list (T*x*t*x)),
   fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
   NoDup (map (fun '(_,_,_,y)=>y) sub_list) ->
   subG G0 (fold_right (fun '(T_,_,_,y_) G0 => Map.add y_ (ctxv_T T_) G0) G0 sub_list).
-Proof with try easy.
+Proof.
   intros.
-  induction sub_list...
-  destruct a as (((?T_, ?x_), ?t_), y).
-  inv H1.
-  inv H0.
-  pose proof IHsub_list H2 H5.
-  cbn.
-  apply subG_add; auto.
-  intro.
+  induction sub_list.
+  - easy.
+  - destruct a as (((?T_, ?x_), ?t_), y).
+    inv H1.
+    inv H0.
+    pose proof IHsub_list H2 H5.
+    cbn.
+    apply subG_add; auto.
+    intro.
 
-  apply MapFacts.in_find_iff in H3.
-  apply MapFacts.not_find_in_iff in H1.
-  pose proof map_neq_none_is_some _ _ H3 as (?T_, ?).
-  pose proof vars_well_typed _ _ _ H6 as (?T_, ->).
-  pose proof H _ _ H6 as (?t_, (?, _)).
-  rewrite H1 in H7.
-  discriminate.
+    apply MapFacts.in_find_iff in H3.
+    apply MapFacts.not_find_in_iff in H1.
+    pose proof map_neq_none_is_some _ _ H3 as (?T_, ?).
+    pose proof vars_well_typed _ _ _ H6 as (?T_, ->).
+    pose proof H _ _ H6 as (?t_, (?, _)).
+    rewrite H1 in H7.
+    discriminate.
 Qed.
 
 Lemma fresh_consistent: forall G0 s0 (sub_list: list (T*x*t*x)),
@@ -136,16 +137,17 @@ Lemma fresh_consistent: forall G0 s0 (sub_list: list (T*x*t*x)),
   NoDup (map (fun '(_,_,_,y)=>y) sub_list) ->
   G_vdash_s (fold_right (fun '(T_,_,_,y_) G0 => Map.add y_ (ctxv_T T_) G0) G0 sub_list)
     (fold_right (fun '(_,_,t_,y_) s0 => Map.add y_ t_ s0) s0 sub_list).
-Proof with try easy.
+Proof.
   intros.
-  induction sub_list...
-  destruct a as (((?T_, ?x_), ?t_), y).
-  inv H1.
-  inv H2.
+  induction sub_list.
+  * easy.
+  * destruct a as (((?T_, ?x_), ?t_), y).
+    inv H1.
+    inv H2.
 
-  cbn.
-  intros ?y ?T_ ?.
-  destruct (eq_x y y0); subst.
+    cbn.
+    intros ?y ?T_ ?.
+    destruct (eq_x y y0); subst.
   - exists t_.
     split...
     + apply Map.find_1.
@@ -234,11 +236,11 @@ Lemma subst_snd_commutes: forall x0 s e_T_list,
   map (fun pat_ : e * T => let (_, T_) := pat_ in T_)
     (map (fun pat_ : e * T => let (e_, T_) := pat_ in (e_var_subst_one e_ x0 s, T_)) e_T_list) =
     map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list.
-Proof with auto.
+Proof.
   intros.
-  induction e_T_list...
+  induction e_T_list; auto.
   destruct a;cbn in *.
-  rewrite IHe_T_list...
+  now rewrite IHe_T_list.
 Qed.
 
 Lemma fold_map_reshuffle: forall (l: list (T*x*t*x)) G0,
@@ -733,14 +735,15 @@ Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
     typ_e G5 e5 T5 ->
     red_e Flist s5 e5 s' e' ->
     exists G', subG G5 G' /\ G_vdash_s G' s' /\ typ_e G' e' T5.
-Proof with try easy.
+Proof.
   intros Fs G5 s0 s_well_typed F_well_typed.
   intros e0 T0 s' e' e0_type reduction.
   generalize dependent T0.
   generalize dependent G5.
   induction reduction.
   - intros.
-    exists G5; splits...
+    exists G5; splits.
+    1,2: easy.
     inv e0_type.
     destruct (s_well_typed x5 T0 H2) as (?, (?, ?)).
     rewrite H in H0.
@@ -757,17 +760,18 @@ Proof with try easy.
       rewrite H3.
       apply in_map_iff.
       exists (e_5, T_5).
-      split...
-      apply in_combine_split with (2:=eq_refl)...
+      split; auto.
+      apply in_combine_split with (2:=eq_refl); auto.
     }
     pose proof H2 e_5 T_5 H5.
     destruct (IHreduction G5 s_well_typed F_well_typed _ H6) as (G' & G'extends & G'consistent & ?).
     exists G'.
-    splits...
+    splits.
+    1,2: easy.
     replace (e_list ++ [e'] ++ e'_list ++ []) with
         (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => e_ end )
            (combine (e_list ++ [e'] ++ e'_list ++[]) (map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list))).
-    apply typ_func_expr...
+    apply typ_func_expr.
       * intros.
         rewrite pat2_id in H8.
         rewrite H3 in H8.
@@ -775,33 +779,35 @@ Proof with try easy.
         rewrite combine_app in H8...
         apply in_app_iff in H8.
         destruct H8.
-        -- apply subG_type with (G1:=G5)...
+        -- apply subG_type with (G1:=G5); auto.
            apply H2.
            apply in_map_iff.
            exists (e_, T_).
-           split...
+           split; auto.
            rewrite H3.
-           rewrite combine_app... {
+           rewrite combine_app; auto.
+           {
              eapply in_app_iff.
-             left...
+             now left.
            }
            rewrite 2 app_length.
            simpl.
            rewrite H1.
            reflexivity.
-        -- rewrite combine_app in H8...
+        -- rewrite combine_app in H8; auto.
            apply in_app_iff in H8.
            destruct H8.
            ++ inv H8;[|contradiction].
               inv H9.
               apply H7.
-           ++ apply subG_type with (G1:=G5)...
+           ++ apply subG_type with (G1:=G5); auto.
               apply H2.
               apply in_map_iff.
               exists (e_, T_).
-              split...
+              split; auto.
               rewrite H3.
-              rewrite combine_app... {
+              rewrite combine_app; auto.
+              {
                 eapply in_app_iff.
                 right.
                 right.
@@ -814,6 +820,7 @@ Proof with try easy.
            reflexivity.
            ++ rewrite app_nil_r.
               apply H1.
+        -- auto.
         -- rewrite app_nil_r.
            simpl.
            rewrite H1.
@@ -826,7 +833,7 @@ Proof with try easy.
            apply H4.
         ++ rewrite map_length.
            rewrite H3.
-           rewrite 2 combine_app...
+           rewrite 2 combine_app; auto.
            ** repeat (rewrite app_length).
               rewrite 3 combine_length.
               simpl.
@@ -837,7 +844,7 @@ Proof with try easy.
               rewrite H1.
               reflexivity.
       * rewrite app_nil_r.
-        rewrite combine_fst...
+        rewrite combine_fst; auto.
         rewrite map_length.
         rewrite H3.
         rewrite combine_length.
@@ -886,7 +893,7 @@ Proof with try easy.
       rewrite map_map.
       apply in_map_iff.
       exists Txty.
-      split...
+      split; auto.
       destruct Txty as (((?, ?), ?), ?).
       now inv H10.
 
