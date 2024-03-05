@@ -1,7 +1,6 @@
 From ABS Require Import abs_defs.
 From stdpp Require Import prelude.
 
-(* use list lookup from stdpp *)
 Inductive typ_e_alt : G -> e -> T -> Prop :=
 | typ_bool_alt : forall (G5:G) (b5:b),
     typ_e_alt G5 (e_t (t_b b5)) T_bool
@@ -12,8 +11,7 @@ Inductive typ_e_alt : G -> e -> T -> Prop :=
     typ_e_alt G5 (e_var x5) T5
 | typ_func_expr_alt : forall (el:list e) (Tl : list T) (G5:G) (fn5:fn) (T_5:T),
     length el = length Tl ->
-    (forall (j : nat) (e0 : e) (T0 : T),
-      el !! j = Some e0 -> Tl !! j = Some T0 -> typ_e_alt G5 e0 T0) ->
+    Forall2 (fun e0 T0 => typ_e_alt G5 e0 T0) el Tl ->
     Map.find fn5 G5 = Some (ctxv_sig (sig_sig Tl T_5)) ->
     typ_e_alt G5 (e_fn_call fn5 el) T_5.
 
