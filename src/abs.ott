@@ -108,17 +108,25 @@ formula :: formula_ ::=
     {{ coq (Map.find [[x]] [[s]] = Some ([[t]])) }}
   | G ( fn ) = sig :: M :: G_fn_eq_sig
     {{ coq (Map.find [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
+  | distinct ( x1 , ... , xn ) :: M :: distinct_vars
+    {{ coq (NoDup [[x1 ... xn]]) }}
   | fresh ( x1 , ... , xn , e ) :: M :: fresh_e
     {{ coq (fresh_vars_e [[x1 ... xn]] [[e]]) }}
   | fresh ( x1 , ... , xn , s ) :: M :: fresh_s
     {{ coq (fresh_vars_s [[x1 ... xn]] [[s]]) }}
   | fresh ( x1 , ... , xn , e , s ) :: M :: fresh
     {{ coq (fresh_vars [[x1 ... xn]] [[e]] [[s]]) }}
+  | disjoint ( ( x1 , ... , xi ) , ( y1 , ... , yj ) ) :: M :: disjoint
+    {{ coq (disjoint [[x1 ... xi]] [[y1 ... yj]]) }}
   | well_formed ( x1 , ... , xn , e , s ) :: M :: well_formed
     {{ coq (well_formed [[e]] [[s]] [[x1 ... xn]]) }}
 
 embed
 {{ coq
+
+Definition disjoint {A:Type} (l1 l2: list A): Prop :=
+ forall a, In a l1 -> ~ In a l2.
+
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
  e_var_subst_one (e_var x0) x_ y_ := if (eq_x x0 x_) then (e_var y_) else (e_var x0);
@@ -181,6 +189,7 @@ defn
 
   G ( fn ) = T1 , ... , Tn -> T
   G [ x1 |-> T1 , ... , xn |-> Tn ] |- e : T
+  distinct (x1 , ... , xn)
   ------------------------------------------- :: func_decl
   G |- def T fn ( T1 x1 , ... , Tn xn ) = e ;
 
@@ -200,5 +209,6 @@ defn
   F1 ... Fn , s |- fn ( e1 , ... , ei , e , e'1 , ... , e'j ) ~> s' |- fn ( e1 , ... , ei , e' , e'1 , ... , e'j )
 
   well_formed (y1 , ... , yn , e, s)
+  disjoint ((y1 , ... , yn) , (x1 , ... , xn))
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- :: fun_ground
   F1 ... Fi def T fn ( T1 x1 , ... , Tn xn ) = e ; F'1 ... F'j , s |- fn ( t1 , ... , tn ) ~> s [ y1 |-> t1 , ... , yn |-> tn ] |- e [ x1 |-> y1 , ... , xn |-> yn ]
