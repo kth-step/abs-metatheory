@@ -100,27 +100,20 @@ Fixpoint e_ott_ind (n:e) : P_e n :=
 end.
 
 End e_rect.
-Fixpoint get_val (k:x) (l:list(x*x)): option x :=
-  match l with
-  | nil => None
-  | (k', v) :: l' =>
-      match eq_x k k' with
-      | left _ => Some v
-      | _ => get_val k l'
-      end
-  end.
 
-Fixpoint e_var_subst (e5:e) (l:list (x*x)) : e :=
-  match e5 with
-  | e_t t => e_t t
-  | e_var x =>
-      match get_val x l with
-              | None => e_var x
-              | Some y => e_var y
-              end
-  | e_fn_call fn e_list =>
-      e_fn_call fn (map (fun e => e_var_subst e l) e_list)
-  end.
+Definition disjoint {A:Type} (l1 l2: list A): Prop :=
+ forall a, In a l1 -> ~ In a l2.
+
+Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
+ e_var_subst_one (e_t t) _ _ := e_t t;
+ e_var_subst_one (e_var x0) x_ y_ := if (eq_x x0 x_) then (e_var y_) else (e_var x0);
+ e_var_subst_one (e_fn_call fn0 arg_list) x_ y_ := e_fn_call fn0 (e_list_subst_one arg_list x_ y_) }
+where e_list_subst_one (es:list e) (x_ y_: x) : list e := {
+ e_list_subst_one nil _ _ := nil;
+ e_list_subst_one (e0::es) x_ y_ := e_var_subst_one e0 x_ y_ :: e_list_subst_one es x_ y_
+}.
+
+Definition e_var_subst (e5:e) (l:list (x*x)) : e := fold_right (fun '(x', y') e' => e_var_subst_one e' x' y') e5 l.
 
 Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
  fresh_vars_e _ (e_t _) := True;
@@ -129,6 +122,17 @@ Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
 where fresh_vars_el (l : list x) (el0 : list e) : Prop := {
  fresh_vars_el l nil := True;
  fresh_vars_el l (e1::el0) := fresh_vars_e l e1 /\ fresh_vars_el l el0 }.
+
+Fixpoint fresh_vars_s (l : list x) (s0 : s): Prop :=
+  match l with
+  | nil => True
+  | (y::ys) => ~ Map.In y s0 /\ fresh_vars_s ys s0
+  end.
+
+Definition fresh_vars (l : list x) (e0: e) (s0: s) : Prop :=
+  fresh_vars_s l s0 /\ fresh_vars_e l e0.
+
+Definition well_formed (e0: e) (s0: s) (l:list x) : Prop := fresh_vars l e0 s0 /\ NoDup l.
 
 (** definitions *)
 
@@ -152,6 +156,7 @@ Inductive typ_F : G -> F -> Prop :=    (* defn F *)
  | typ_func_decl : forall (T_x_list:list (T*x)) (G5:G) (T_5:T) (fn5:fn) (e5:e),
       (Map.find  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => T_ end ) T_x_list) T_5) ))  ->
      typ_e  (fold_right (fun (ax : x * T) (G5 : G) => Map.add (fst ax) (ctxv_T (snd ax)) G5)  G5   (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => (x_,T_) end ) T_x_list) )  e5 T_5 ->
+      (NoDup  (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => x_ end ) T_x_list) )  ->
      typ_F G5 (F_fn T_5 fn5 T_x_list e5).
 (** definitions *)
 
@@ -164,7 +169,8 @@ Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
      red_e F_list s5 e_5 s' e' ->
      red_e F_list s5 (e_fn_call fn5 ((app e_list (app (cons e_5 nil) (app e'_list nil))))) s' (e_fn_call fn5 ((app e_list (app (cons e' nil) (app e'_list nil)))))
  | red_fun_ground : forall (T_x_t_y_list:list (T*x*t*x)) (F'_list F_list:list F) (T_5:T) (fn5:fn) (e5:e) (s5:s),
-      (fresh_vars_e  (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => y_ end ) T_x_t_y_list)   e5 )  ->
+      (well_formed  e5   s5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => y_ end ) T_x_t_y_list) )  ->
+      (disjoint  (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => y_ end ) T_x_t_y_list)   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => x_ end ) T_x_t_y_list) )  ->
      red_e ((app F_list (app (cons (F_fn T_5 fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (T_,x_) end ) T_x_t_y_list) e5) nil) (app F'_list nil)))) s5 (e_fn_call fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (e_t t_) end ) T_x_t_y_list))  (fold_right (fun (xt : x * t) (s5 : s) => Map.add (fst xt) (snd xt) s5)  s5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (y_,t_) end ) T_x_t_y_list) )   (e_var_subst  e5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (x_,y_) end ) T_x_t_y_list) ) .
 
 

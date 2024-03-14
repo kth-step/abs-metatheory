@@ -25,6 +25,7 @@ Proof.
   apply typ_func_decl.
   - easy.
   - apply e_const_5_T_int.
+  - simpl; constructor.
 Qed.
 
 Lemma e_call_const_5_T_int :
