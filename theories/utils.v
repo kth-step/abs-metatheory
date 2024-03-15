@@ -1,5 +1,4 @@
 From Coq Require Import List
-  FSets.FMapFacts
   Lia.
 
 Import ListNotations.
@@ -253,6 +252,28 @@ Section ListLemmas.
     now rewrite IHl.
   Qed.
 
+  Lemma fold_map4 {A Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
+      fold_right (fun '(z, w, _, _) a => f z w a) a0 l =
+        fold_right (fun '(z, w) a => f z w a) a0
+          (map (fun '(z, w, _, _) => (z, w)) l).
+  Proof.
+    induction l; intros; eauto.
+    destruct a as [[[? ?] ?] ?].
+    simpl.
+    now rewrite IHl.
+  Qed.
+
+  Lemma fold_map5 {A Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
+      fold_right (fun '(z, _, _, w) a => f z w a) a0 l =
+        fold_right (fun '(z, w) a => f z w a) a0
+          (map (fun '(z, _, _, w) => (z, w)) l).
+  Proof.
+    induction l; intros; eauto.
+    destruct a as [[[? ?] ?] ?].
+    simpl.
+    now rewrite IHl.
+  Qed.
+
   Lemma combine_map: forall (l: list (X*Y)),
       combine (map fst l) (map snd l) = l.
   Proof.
@@ -338,11 +359,8 @@ Section ListLemmas.
 
 End ListLemmas.
 
-Require Import FMapList OrderedTypeEx.
 From ABS Require Import abs_defs.
 From Equations Require Import Equations.
-
-Module MapFacts := FSets.FMapFacts.Facts Map.
 
 
 (* some slightly ad-hoc equalities *)
@@ -582,25 +600,28 @@ Qed.
 
 Section MapLemmas.
 
-  Lemma map_neq_none_is_some{elt:Type}: forall m x,
-      Map.find x m <> None ->
-      exists y, Map.find (elt:=elt) x m = Some y.
+  Context `{FinMap x M}.
+
+  Lemma neq_none_is_some: forall A (x: option A),
+      x <> None -> exists y, x = Some y.
+  Proof.
+    destruct x; intros; eauto.
+    contradiction.
+  Qed.
+
+  Lemma map_neq_none_is_some {A}: forall (m: M A) x,
+      lookup x m <> None ->
+      exists y, lookup x m = Some y.
   Proof.
     intros.
-    destruct (MapFacts.In_dec m x).
-    - inv i.
-      exists x0.
-      apply Map.find_1.
-      apply H0.
-    - apply MapFacts.not_find_in_iff in n.
-      rewrite n in H.
-      contradiction.
+    apply neq_none_is_some in H7.
+    apply H7.
   Qed.
 
   Lemma fold_map_reshuffle: forall (l: list (T*x*t*x)) G0,
-      (fold_right (fun (ax : x * T) (G' : G) => Map.add (fst ax) (ctxv_T (snd ax)) G') G0
+      (fold_right (fun (ax : x * T) (G' : G) => insert (fst ax) (ctxv_T (snd ax)) G') G0
          (map (fun pat_ : T * x => let (T_, x_) := pat_ in (x_, T_)) (map (fun '(T_0, x_, _, _) => (T_0, x_)) l)))
-      = (fold_right (fun '(T1, x_, _, _) (G' : G) => Map.add x_ (ctxv_T T1) G') G0 l).
+      = (fold_right (fun '(T1, x_, _, _) (G' : G) => insert x_ (ctxv_T T1) G') G0 l).
   Proof.
     induction l;intros;auto.
     destruct a as (((?T_ & ?x_) & ?t_) & ?y).
@@ -609,80 +630,17 @@ Section MapLemmas.
     reflexivity.
   Qed.
 
-  Lemma map_add_comm{E:Type}: forall m key key' elt elt',
-      key <> key' -> Map.Equal (Map.add (elt:=E) key elt (Map.add key' elt' m)) (Map.add key' elt' (Map.add key elt m)).
-  Proof.
-    intros.
-    intro.
-    destruct (Map.find y m) eqn:?.
-    - destruct (eq_x y key), (eq_x y key'); subst;
-        erewrite 2 Map.find_1; eauto;
-        (* this should just be "eauto with map", but I can't seem to import the hint database *)
-        try (apply Map.add_2; eauto; now apply Map.add_1);
-        try (now apply Map.add_1; eauto);
-        try (repeat (apply Map.add_2; eauto); now apply Map.find_2; eauto).
-    - destruct (eq_x y key), (eq_x y key'); subst.
-      + contradiction.
-      + erewrite 2 Map.find_1; eauto.
-        * apply Map.add_2; eauto.
-          now apply Map.add_1.
-        * now apply Map.add_1.
-      + erewrite 2 Map.find_1; eauto.
-        * now apply Map.add_1.
-        * apply Map.add_2; eauto.
-          now apply Map.add_1.
-
-      (* there has to be a cleaner way to do this case?? *)
-      + replace (Map.find (elt:=E) y (Map.add key elt (Map.add key' elt' m))) with (@None E).
-        replace (Map.find (elt:=E) y (Map.add key' elt' (Map.add key elt m))) with (@None E).
-        reflexivity.
-        * symmetry.
-          apply MapFacts.not_find_in_iff in Heqo.
-          apply MapFacts.not_find_in_iff.
-          intro.
-          apply Heqo.
-          inv H0.
-          exists x.
-          apply Map.add_3  with (x:= key) (e':=elt); auto.
-          apply Map.add_3 with (x:=key') (e':=elt'); auto.
-        * symmetry.
-          apply MapFacts.not_find_in_iff in Heqo.
-          apply MapFacts.not_find_in_iff.
-          intro.
-          inv H0.
-          apply Heqo.
-          exists x.
-          apply Map.add_3 with (x:=key') (e':=elt'); auto.
-          apply Map.add_3  with (x:= key) (e':=elt); auto.
-  Qed.
-
-  Lemma fold_not_in: forall G0 y (T_x_t_y_list: list (T*x*t*x)),
-      ~ Map.In y G0 ->
-      ~ In y (map (fun '(_, _, _, y') => y') T_x_t_y_list) ->
-      ~ Map.In y (fold_right (fun '(T_, _, _, y) (G0 : G) => Map.add y (ctxv_T T_) G0) G0 T_x_t_y_list).
-  Proof.
-    induction T_x_t_y_list as [ | (((?T_, ?x_), ?t_), ?y) T_x_t_y_list IH ]; [easy|].
-    simpl; intros ? ? ?.
-    destruct (eq_x y y0); subst.
-    - apply H0.
-      now left.
-    - apply MapFacts.add_in_iff in H1.
-      inv H1.
-      + apply H0.
-        now left.
-      + apply IH; eauto.
-  Qed.
-
-  Lemma fold_add_comm: forall G0 y T_ (upd: list (T*x)),
+  Lemma fold_add_comm: forall (G0: G) y T_ (upd: list (T*x)),
       ~ In y (map (fun '(_, y) => y) upd) ->
-      Map.Equal (Map.add y (ctxv_T T_) (fold_right (fun '(T_, y) G0 => Map.add y (ctxv_T T_) G0) G0 upd))
-        (fold_right (fun '(T_, y) G0 => Map.add y (ctxv_T T_) G0) (Map.add y (ctxv_T T_) G0) upd).
+      (insert y (ctxv_T T_) (fold_right (fun '(T_, y) G0 => insert y (ctxv_T T_) G0) G0 upd)) =
+        (fold_right (fun '(T_, y) G0 => insert y (ctxv_T T_) G0) (insert y (ctxv_T T_) G0) upd).
   Proof.
     induction upd; intros.
     - easy.
     - destruct a; simpl in *.
-      apply Decidable.not_or in H.
-      destruct H.
-      now rewrite map_add_comm, IHupd; auto.
+      apply Decidable.not_or in H7.
+      destruct H7.
+      rewrite <- IHupd; eauto.
+      setoid_rewrite insert_commute with (i:=x); eauto.
   Qed.
 End MapLemmas.
