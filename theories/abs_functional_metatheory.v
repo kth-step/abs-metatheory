@@ -7,8 +7,6 @@ From Coq Require Import List
 
 From Equations Require Import Equations.
 
-Require Import FMapList.
-Module MapFacts := FSets.FMapFacts.Facts Map.
 Import ListNotations.
 
 (** * ABS Functional Metatheory *)
@@ -17,17 +15,16 @@ Section FunctionalMetatheory.
 
 Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fn), x_ <> fn_).
 Hypothesis (vars_well_typed: forall (x_:x) (G0: G) T0,
-             Map.find x_ G0 = Some T0 ->
+             lookup x_ G0 = Some T0 ->
              exists T_, T0 = ctxv_T T_).
 
 Definition subG (G1 G2 : G) : Prop :=
   forall (key : string) (elt : ctxv),
-    Map.find key G1 = Some elt ->
-    Map.find key G2 = Some elt.
+    lookup key G1 = Some elt ->
+    lookup key G2 = Some elt.
 
 Notation "G ⊢ e : T" := (typ_e G e T) (at level 5).
 Notation "G F⊢ F" := (typ_F G F) (at level 5).
-Notation "G1 ⊆ G2" := (subG G1 G2) (at level 5).
 
 Lemma subG_refl: forall G0,
   subG G0 G0.
@@ -35,20 +32,17 @@ Proof. easy. Qed.
 
 Lemma subG_add: forall G0 G1 y T_,
   subG G0 G1 ->
-  ~ Map.In y G0 ->
-  subG G0 (Map.add y T_ G1).
+  G0 !! y = None ->
+  subG G0 (insert y T_ G1).
 Proof.
   intros.
   intros ?x_ ?T_ ?.
 
   destruct (eq_x y x_); subst.
-  - exfalso.
-    apply H0.
-    apply MapFacts.in_find_iff.
-    intro.
-    rewrite H1 in H2.
-    discriminate.
-  - apply Map.find_1.
+  - setoid_rewrite H0 in H1.
+    inv H1.
+  - rewrite lookup_ne.
+    apply Map.find_1.
     apply MapFacts.add_neq_mapsto_iff; auto.
     pose proof H x_ T_0 H1.
     apply Map.find_2.
