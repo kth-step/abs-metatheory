@@ -8,7 +8,7 @@ version: "dev"
 homepage: "https://github.com/kth-step/abs-metatheory"
 dev-repo: "git+https://github.com/kth-step/abs-metatheory.git"
 bug-reports: "https://github.com/kth-step/abs-metatheory/issues"
-
+license: "MIT"
 
 synopsis: "Formal metatheory in Coq of the ABS language"
 description: """

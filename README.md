@@ -19,6 +19,7 @@ Formal metatheory in Coq for the ABS language.
 - Author(s):
   - Åsmund Kløvstad
   - Karl Palmskog
+- License: [MIT License](LICENSE)
 - Compatible Coq versions: 8.16 or later
 - Additional dependencies:
   - [Ott Coq library](https://github.com/ott-lang/ott) 0.33 or later
