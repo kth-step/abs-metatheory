@@ -428,6 +428,55 @@ Proof.
   }
 Qed.
 
+Lemma typ_e_G_Equal_equiv_imp : 
+ forall G1 G2 e T, Map.Equal G1 G2 -> typ_e G1 e T -> typ_e G2 e T.
+Proof.
+intros G1 G2 e0 T0 Heq.
+intros Ht.
+induction Ht.
+- apply typ_bool.
+- apply typ_int.
+- apply typ_var.
+  symmetry in Heq.
+  rewrite <- H.
+  apply Heq.
+- apply typ_func_expr.
+  * intros.
+    apply H0; auto.
+  * rewrite <- H1.
+    symmetry in Heq.
+    apply Heq.
+Qed.
+
+Lemma typ_e_G_Equal_equiv : 
+ forall G1 G2 e T, Map.Equal G1 G2 -> (typ_e G1 e T <-> typ_e G2 e T).
+Proof.
+intros G1 G2 e0 T0 Heq; split; apply typ_e_G_Equal_equiv_imp; auto.
+symmetry; assumption.
+Qed.
+
+Lemma fold_map4 {A X Y Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
+    fold_right (fun '(z, w, _, _) a => f z w a) a0 l =
+      fold_right (fun '(z, w) a => f z w a) a0
+        (map (fun '(z, w, _, _) => (z, w)) l).
+Proof.
+  induction l; intros; eauto.
+  destruct a as [[[? ?] ?] ?].
+  simpl.
+  now rewrite IHl.
+Qed.
+
+Lemma fold_map5 {A X Y Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
+    fold_right (fun '(z, _, _, w) a => f z w a) a0 l =
+      fold_right (fun '(z, w) a => f z w a) a0
+        (map (fun '(z, _, _, w) => (z, w)) l).
+Proof.
+  induction l; intros; eauto.
+  destruct a as [[[? ?] ?] ?].
+  simpl.
+  now rewrite IHl.
+Qed.
+
 Lemma subst_lemma: forall (T_x_t_y_list:list (T*x*t*x)) G0 e0 A,
   typ_e (fold_right (fun '(Ai, x_, _, _) (G0 : G) => Map.add x_ (ctxv_T Ai) G0) G0 T_x_t_y_list) e0 A ->
   NoDup (map (fun '(_, _, _, y) => y) T_x_t_y_list) ->
@@ -463,13 +512,49 @@ Proof.
         now intros (((?, ?), ?), ?).
       - now left.
     }
-    replace (Map.add x_ (ctxv_T T_) (fold_right (fun '(Ai, x_, _, _) (G0 : G) => Map.add x_ (ctxv_T Ai) G0) G0 T_x_t_y_list))
-      with (fold_right (fun '(Ai, x_, _, _) (G0 : G) => Map.add x_ (ctxv_T Ai) G0) (Map.add x_ (ctxv_T T_) G0) T_x_t_y_list)
-      in H.
+    assert (~ In x_ (map (fun '(_, y) => y) (map (fun '(Ai, x1, _, _) => (Ai, x1)) T_x_t_y_list))) as Hinx.
+    {
+      intro.
+      apply H5.
+      rewrite map_map in H10.
+      revert H10.
+      clear.
+      induction T_x_t_y_list; auto.
+      simpl.
+      intros Hx.
+      destruct Hx.
+      - destruct a, p, p.
+        subst.
+        left; reflexivity.
+      - right.
+        apply IHT_x_t_y_list.
+        assumption.
+    }
+    assert (Map.Equal
+     (Map.add x_ (ctxv_T T_) (fold_right (fun '(Ai, x_0, _, _) (G0 : G) => Map.add x_0 (ctxv_T Ai) G0) G0 T_x_t_y_list))
+     (fold_right (fun '(Ai, x_, _, _) (G0 : G) => Map.add x_ (ctxv_T Ai) G0) (Map.add x_ (ctxv_T T_) G0) T_x_t_y_list))
+      as HMEqualx.
+    {
+      epose proof fold_add_comm G0 x_ T_ (map (fun '(Ai, x1, _, _) => (Ai, x1)) T_x_t_y_list) Hinx.
+      rewrite 2 fold_map4.
+      assumption.
+    }
+    assert (Map.Equal
+     (fold_right (fun '(Ai, _, _, y) (G0 : G) => Map.add y (ctxv_T Ai) G0) (Map.add x_ (ctxv_T T_) G0) T_x_t_y_list)
+     (Map.add x_ (ctxv_T T_) (fold_right (fun '(Ai, _, _, y) (G0 : G) => Map.add y (ctxv_T Ai) G0) G0 T_x_t_y_list)))
+      as HMEqualy.
+    {
+      epose proof fold_add_comm G0 x_ T_ (map (fun '(Ai, _, _, y1) => (Ai, y1)) T_x_t_y_list) H9.
+      rewrite fold_map5.
+      set (fd := fold_right _ _ _).
+      rewrite fold_map5.
+      unfold fd; clear fd.
+      symmetry.
+      assumption.
+    }
+    apply (typ_e_G_Equal_equiv _ _ _ _ HMEqualx) in H.
     pose proof IHT_x_t_y_list H7 H8 H4 _ H1 _ H as IH.
-    replace (fold_right (fun '(Ai, _, _, y) (G0 : G) => Map.add y (ctxv_T Ai) G0) (Map.add x_ (ctxv_T T_) G0) T_x_t_y_list)
-      with (Map.add x_ (ctxv_T T_) (fold_right (fun '(Ai, _, _, y) (G0 : G) => Map.add y (ctxv_T Ai) G0) G0 T_x_t_y_list))
-      in IH.
+    apply (typ_e_G_Equal_equiv _ _ _ _ HMEqualy) in IH.
     assert (fresh_vars_e [y] (e_var_subst e0 (map (fun '(_, x_, _, y_) => (x_, y_)) T_x_t_y_list))).
     {
       assert (map snd (map (fun '(_, x_0, _, y_) => (x_0, y_)) T_x_t_y_list) = map (fun '(_, _, _, y) => y) T_x_t_y_list).
@@ -481,23 +566,7 @@ Proof.
       apply fresh_var_subst; try rewrite H10; auto.
     }
     now apply (subst_lemma_one _ _ _ _ _ _ IH H10).
-
-    (* resolving those replaces from earlier *)
-    {
-      epose proof fold_add_comm G0 x_ T_ (map (fun '(Ai, _, _, y1) => (Ai, y1)) T_x_t_y_list) H9.
-      rewrite 2 fold_map1.
-      Fail apply H10.
-      (* why? *)
-      admit.
-    }
-    {
-      epose proof fold_add_comm G0 x_ T_ (map (fun '(Ai, _, _, y1) => (Ai, y1)) T_x_t_y_list) H9.
-      rewrite 2 fold_map2.
-      Fail rewrite <- H10.
-      (* why? *)
-      admit.
-    }
-Admitted.
+Qed.
 
 Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
   G_vdash_s G5 s5 ->
