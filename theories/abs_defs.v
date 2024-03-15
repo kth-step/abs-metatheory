@@ -99,9 +99,9 @@ From stdpp Require Export
     gmap.
 
 
-Definition s : Type := gmap x t.
+Notation s := (gmap x t).
 
-Definition G : Type := gmap x ctxv.
+Notation G := (gmap x ctxv).
 
 Definition disjoint {A:Type} (l1 l2: list A): Prop :=
  forall a, In a l1 -> ~ In a l2.

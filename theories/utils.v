@@ -252,6 +252,28 @@ Section ListLemmas.
     now rewrite IHl.
   Qed.
 
+  Lemma fold_map4 {A Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
+      fold_right (fun '(z, w, _, _) a => f z w a) a0 l =
+        fold_right (fun '(z, w) a => f z w a) a0
+          (map (fun '(z, w, _, _) => (z, w)) l).
+  Proof.
+    induction l; intros; eauto.
+    destruct a as [[[? ?] ?] ?].
+    simpl.
+    now rewrite IHl.
+  Qed.
+
+  Lemma fold_map5 {A Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
+      fold_right (fun '(z, _, _, w) a => f z w a) a0 l =
+        fold_right (fun '(z, w) a => f z w a) a0
+          (map (fun '(z, _, _, w) => (z, w)) l).
+  Proof.
+    induction l; intros; eauto.
+    destruct a as [[[? ?] ?] ?].
+    simpl.
+    now rewrite IHl.
+  Qed.
+
   Lemma combine_map: forall (l: list (X*Y)),
       combine (map fst l) (map snd l) = l.
   Proof.
@@ -677,16 +699,17 @@ Section MapLemmas.
   (*     + apply IH; eauto. *)
   (* Qed. *)
 
-  (* Lemma fold_add_comm: forall G0 y T_ (upd: list (T*x)), *)
-  (*     ~ In y (map (fun '(_, y) => y) upd) -> *)
-  (*     Map.Equal (Map.add y (ctxv_T T_) (fold_right (fun '(T_, y) G0 => Map.add y (ctxv_T T_) G0) G0 upd)) *)
-  (*       (fold_right (fun '(T_, y) G0 => Map.add y (ctxv_T T_) G0) (Map.add y (ctxv_T T_) G0) upd). *)
-  (* Proof. *)
-  (*   induction upd; intros. *)
-  (*   - easy. *)
-  (*   - destruct a; simpl in *. *)
-  (*     apply Decidable.not_or in H. *)
-  (*     destruct H. *)
-  (*     now rewrite map_add_comm, IHupd; auto. *)
-  (* Qed. *)
+  Lemma fold_add_comm: forall (G0: G) y T_ (upd: list (T*x)),
+      ~ In y (map (fun '(_, y) => y) upd) ->
+      (insert y (ctxv_T T_) (fold_right (fun '(T_, y) G0 => insert y (ctxv_T T_) G0) G0 upd)) =
+        (fold_right (fun '(T_, y) G0 => insert y (ctxv_T T_) G0) (insert y (ctxv_T T_) G0) upd).
+  Proof.
+    induction upd; intros.
+    - easy.
+    - destruct a; simpl in *.
+      apply Decidable.not_or in H7.
+      destruct H7.
+      rewrite <- IHupd; eauto.
+      setoid_rewrite insert_commute with (i:=x); eauto.
+  Qed.
 End MapLemmas.
