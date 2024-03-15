@@ -455,7 +455,16 @@ intros G1 G2 e0 T0 Heq; split; apply typ_e_G_Equal_equiv_imp; auto.
 symmetry; assumption.
 Qed.
 
-
+Lemma fold_map4 {A X Y Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
+    fold_right (fun '(z, w, _, _) a => f z w a) a0 l =
+      fold_right (fun '(z, w) a => f z w a) a0
+        (map (fun '(z, w, _, _) => (z, w)) l).
+Proof.
+  induction l; intros; eauto.
+  destruct a as [[[? ?] ?] ?].
+  simpl.
+  now rewrite IHl.
+Qed.
 
 Lemma fold_map5 {A X Y Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
     fold_right (fun '(z, _, _, w) a => f z w a) a0 l =
@@ -503,17 +512,32 @@ Proof.
         now intros (((?, ?), ?), ?).
       - now left.
     }
+    assert (~ In x_ (map (fun '(_, y) => y) (map (fun '(Ai, x1, _, _) => (Ai, x1)) T_x_t_y_list))) as Hinx.
+    {
+      intro.
+      apply H5.
+      rewrite map_map in H10.
+      revert H10.
+      clear.
+      induction T_x_t_y_list; auto.
+      simpl.
+      intros Hx.
+      destruct Hx.
+      - destruct a, p, p.
+        subst.
+        left; reflexivity.
+      - right.
+        apply IHT_x_t_y_list.
+        assumption.
+    }
     assert (Map.Equal
      (Map.add x_ (ctxv_T T_) (fold_right (fun '(Ai, x_0, _, _) (G0 : G) => Map.add x_0 (ctxv_T Ai) G0) G0 T_x_t_y_list))
      (fold_right (fun '(Ai, x_, _, _) (G0 : G) => Map.add x_ (ctxv_T Ai) G0) (Map.add x_ (ctxv_T T_) G0) T_x_t_y_list))
       as HMEqualx.
     {
-      (*
-      epose proof fold_add_comm G0 x_ T_ (map (fun '(Ai, x1, _, _) => (Ai, x1)) T_x_t_y_list).
-      rewrite 2 fold_map5.
+      epose proof fold_add_comm G0 x_ T_ (map (fun '(Ai, x1, _, _) => (Ai, x1)) T_x_t_y_list) Hinx.
+      rewrite 2 fold_map4.
       assumption.
-      *)
-      admit.
     }
     assert (Map.Equal
      (fold_right (fun '(Ai, _, _, y) (G0 : G) => Map.add y (ctxv_T Ai) G0) (Map.add x_ (ctxv_T T_) G0) T_x_t_y_list)
@@ -542,7 +566,7 @@ Proof.
       apply fresh_var_subst; try rewrite H10; auto.
     }
     now apply (subst_lemma_one _ _ _ _ _ _ IH H10).
-Admitted.
+Qed.
 
 Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
   G_vdash_s G5 s5 ->
