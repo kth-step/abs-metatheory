@@ -65,6 +65,8 @@ e :: e_ ::=
     {{ com variable }}
   | fn ( e1 , ... , en ) :: :: fn_call
     {{ com function call }}
+  | e1 + e2 :: :: plus
+  | e1 && e2 :: :: and
   | e [ x1 |-> y1 , ... , xn |-> yn ] :: M :: subst_var
     {{ coq (e_var_subst [[e]] [[x1 |-> y1 ... xn |-> yn]]) }}
 
@@ -129,20 +131,28 @@ Definition disjoint {A:Type} (l1 l2: list A): Prop :=
 
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
- e_var_subst_one (e_var x0) x_ y_ := if (eq_x x0 x_) then (e_var y_) else (e_var x0);
- e_var_subst_one (e_fn_call fn0 arg_list) x_ y_ := e_fn_call fn0 (e_list_subst_one arg_list x_ y_) }
-where e_list_subst_one (es:list e) (x_ y_: x) : list e := {
+ e_var_subst_one (e_var x0) x_ y_ :=
+  if (eq_x x0 x_) then (e_var y_) else (e_var x0);
+ e_var_subst_one (e_fn_call fn0 arg_list) x_ y_ :=
+  e_fn_call fn0 (e_list_subst_one arg_list x_ y_);
+ e_var_subst_one (e_plus e1 e2) x_ y_ :=
+  e_plus (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
+ e_var_subst_one (e_and e1 e2) x_ y_ :=
+  e_and (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
+} where e_list_subst_one (es:list e) (x_ y_: x) : list e := {
  e_list_subst_one nil _ _ := nil;
  e_list_subst_one (e0::es) x_ y_ := e_var_subst_one e0 x_ y_ :: e_list_subst_one es x_ y_
 }.
 
-Definition e_var_subst (e5:e) (l:list (x*x)) : e := fold_right (fun '(x', y') e' => e_var_subst_one e' x' y') e5 l.
+Definition e_var_subst (e5:e) (l:list (x*x)) : e :=
+ fold_right (fun '(x', y') e' => e_var_subst_one e' x' y') e5 l.
 
 Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
  fresh_vars_e _ (e_t _) := True;
  fresh_vars_e l (e_var x) := ~ In x l;
- fresh_vars_e l (e_fn_call fn el) := fresh_vars_el l el }
-where fresh_vars_el (l : list x) (el0 : list e) : Prop := {
+ fresh_vars_e l (e_fn_call fn el) := fresh_vars_el l el;
+ fresh_vars_e l (e_plus e1 e2) := fresh_vars_e e1 /\ fresh_vars_e e2
+} where fresh_vars_el (l : list x) (el0 : list e) : Prop := {
  fresh_vars_el l nil := True;
  fresh_vars_el l (e1::el0) := fresh_vars_e l e1 /\ fresh_vars_el l el0 }.
 
@@ -170,6 +180,16 @@ defn
 
   ------------ :: int
   G |- z : Int
+
+  G |- e1 : Int
+  G |- e2 : Int
+  ------------------ :: plus
+  G |- e1 + e2 : Int
+
+  G |- e1 : Bool
+  G |- e2 : Bool
+  -------------------- :: and
+  G |- e1 && e2 : Bool
 
   G ( x ) = T
   ----------- :: var
