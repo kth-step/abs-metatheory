@@ -6,3 +6,5 @@ theories/abs_defs.v
 theories/abs_examples.v
 theories/abs_functional_metatheory.v
 theories/utils.v
+
+theories/abstract_confluence.v
