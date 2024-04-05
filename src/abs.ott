@@ -6,9 +6,6 @@ Require Export ZArith.
 Require Import Lia.
 From Equations Require Import Equations.
 
-Require Import FMapList OrderedTypeEx.
-Module Map <: FMapInterface.S := FMapList.Make String_as_OT.
-
 #[export] Hint Resolve bool_dec : ott_coq_equality.
 #[export] Hint Resolve ascii_dec : ott_coq_equality.
 #[export] Hint Resolve Pos.eq_dec : ott_coq_equality.
@@ -75,17 +72,26 @@ ctxv :: ctxv_ ::=
      | T :: :: T
      | sig :: :: sig
 
+embed
+{{ coq
+
+From stdpp Require Export
+    fin_maps
+    gmap.
+}}
+
+grammar
 G {{ tex \Gamma }} :: G_ ::=
-  {{ coq Map.t ctxv }}
+  {{ coq gmap x ctxv }}
   {{ coq-universe Type }}
    | G [ x1 |-> T1 , ... , xn |-> Tn ] :: M :: add_list
-     {{ coq (fold_right (fun (ax : x * T) (G5 : G) => Map.add (fst ax) (ctxv_T (snd ax)) G5) [[G]] [[x1 |-> T1 ... xn |-> Tn]]) }}
+     {{ coq (fold_right (fun (xT : x * T) (G0 : G) => insert (fst xT) (ctxv_T (snd xT)) G0) [[G]] [[x1 |-> T1 ... xn |-> Tn]]) }}
 
 s {{ tex \sigma }} :: s_ ::=
-  {{ coq Map.t t }}
+  {{ coq gmap x t }}
   {{ coq-universe Type }}
    | s [ x1 |-> t1 , ... , xn |-> tn ] :: M :: add_list
-     {{ coq (fold_right (fun (xt : x * t) (s5 : s) => Map.add (fst xt) (snd xt) s5) [[s]] [[x1 |-> t1 ... xn |-> tn]]) }}
+     {{ coq (fold_right (fun (xt : x * t) (s0 : s) => insert (fst xt) (snd xt) s5) [[s]] [[x1 |-> t1 ... xn |-> tn]]) }}
 
 terminals :: terminals_ ::=
   | Bool :: :: bool {{ tex \mathsf{Bool} }}
@@ -103,11 +109,11 @@ formula :: formula_ ::=
   | formula1 ... formulan :: :: dots
     {{ com conjunction of formulas }}
   | G ( x ) = T :: M :: G_eq_T
-    {{ coq (Map.find [[x]] [[G]] = Some (ctxv_T [[T]])) }}
+    {{ coq (lookup [[x]] [[G]] = Some (ctxv_T [[T]])) }}
   | s ( x ) = t :: M :: s_eq_t
-    {{ coq (Map.find [[x]] [[s]] = Some ([[t]])) }}
+    {{ coq (lookup [[x]] [[s]] = Some ([[t]])) }}
   | G ( fn ) = sig :: M :: G_fn_eq_sig
-    {{ coq (Map.find [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
+    {{ coq (lookup [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
   | distinct ( x1 , ... , xn ) :: M :: distinct_vars
     {{ coq (NoDup [[x1 ... xn]]) }}
   | fresh ( x1 , ... , xn , e ) :: M :: fresh_e
@@ -149,7 +155,7 @@ where fresh_vars_el (l : list x) (el0 : list e) : Prop := {
 Fixpoint fresh_vars_s (l : list x) (s0 : s): Prop :=
   match l with
   | nil => True
-  | (y::ys) => ~ Map.In y s0 /\ fresh_vars_s ys s0
+  | (y::ys) => lookup y s0 = None /\ fresh_vars_s ys s0
   end.
 
 Definition fresh_vars (l : list x) (e0: e) (s0: s) : Prop :=
