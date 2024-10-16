@@ -55,7 +55,8 @@ Inductive T : Set :=  (*r ground type *)
 
 Inductive t : Set :=  (*r ground term *)
  | t_b (b5:b) (*r boolean *)
- | t_int (z5:z) (*r integer *).
+ | t_int (z5:z) (*r integer *)
+ | t_fut (_:nat) (*r future *).
 
 Inductive sig : Set := 
  | sig_sig (_:list T) (T_5:T).
@@ -67,6 +68,7 @@ Inductive e : Set :=  (*r expression *)
 
 Inductive ctxv : Set := 
  | ctxv_T (T5:T)
+ | ctxv_fut (T5:T) (* ideally this would be in the imperative part, but typing is very intertwined*)
  | ctxv_sig (sig5:sig).
 
 Inductive F : Set :=  (*r function definition *)
