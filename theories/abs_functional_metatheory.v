@@ -497,7 +497,6 @@ Proof.
            apply in_app_iff in H8.
            destruct H8.
            ++ inv H8;[|contradiction].
-              inv H9.
               apply H7.
            ++ apply subG_type with (G1:=G5); auto.
               apply H2.
@@ -570,8 +569,7 @@ Proof.
         apply map_ext.
         easy.
       - replace (map snd e_T_list) with (map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list) by easy.
-        rewrite H7 in H11.
-        inv H11.
+        rewrite H3.
         rewrite map_map.
         apply map_ext.
         intros.
@@ -597,9 +595,7 @@ Proof.
       (* destruct Txty as (((?, ?), ?), ?). *)
       (* now inv H15. *)
 
-    + rewrite H7 in H11.
-      inv H11.
-      apply subst_lemma; auto.
+    + apply subst_lemma; auto.
       * rewrite <- fold_map_reshuffle; eauto.
       * rewrite map_xs in H10.
         apply H10.
