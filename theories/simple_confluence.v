@@ -5,18 +5,22 @@ From ABS Require Import abstract_confluence.
 
 From stdpp Require Export fin_maps gmap gmultiset.
 
-Section Tick.
+Notation A_id := nat.
+
+Module Tick.
 (* We need to make some changes to fit the format:
     1) we add server actors to put time_at messages into the system
     2) t actors need more states because we cannot send and receive messages at the same time
     3) servers and non-idle t actors need to store their own id to send messages with only local info
-    4) additionally we require some consistency axioms to make this work
+    4) additionally we require some consistency axioms to make (3) work
+       – these could be proven as invariants from a suitable initial config
 *)
-  Definition A_id: Set := nat.
+
   Definition Time: Set := nat.
   Variant Msg: Set := Time_at (c:A_id) | Tick (i:A_id) | Reply (n:Time).
   Variant T_state := Idle | Ans (i:A_id) | Ticking (i:A_id).
-  Variant Local_state: Set := T (n:nat) (_:T_state) | Server (p:list A_id) (i:A_id).
+  Variant Local_state: Set := T (n:nat) (_:T_state)
+                           |  Server (p:list A_id) (i:A_id).
 
   Instance msg_EqDec: EqDecision Msg.
   Proof.
@@ -175,3 +179,84 @@ Section Tick.
     - exact trans.
   Qed.
 End Tick.
+
+Module Flip.
+  Variant Msg: Set := Time_at (c:A_id)
+                   |  Tick (i:A_id)
+                   |  Reply (n:nat)
+                   |  Flip (c:A_id)
+                   |  Head | Tail.
+  Variant CF_state := Flip1 (c:A_id)
+                   |  Waiting (c:A_id)
+                   |  Flip2 (n:nat) (c:A_id).
+  Variant T_state := Ans (i:A_id)
+                  |  Ticking (i:A_id).
+  Variant Local_state: Set := T (n:nat) (_:option T_state)
+                           |  C (i j:A_id) (_:option CF_state).
+
+  Instance msg_EqDec: EqDecision Msg.
+  Proof.
+    intros x y.
+    destruct x, y; try (now left); try (now right).
+    - is_eq c c0.
+      + now left.
+      + right. intro. apply n. inv H.
+    - is_eq i i0.
+      + now left.
+      + right. intro. apply n. inv H.
+    - is_eq n n0.
+      + now left.
+      + right. intro. apply n1. inv H.
+    - is_eq c c0.
+      + now left.
+      + right. intro. apply n. inv H.
+  Qed.
+
+  Definition g: (nat + nat + nat + nat + unit + unit) -> Msg :=
+    fun x => match x with
+          | (inl (inl (inl (inl (inl c))))) => Time_at c
+          | (inl (inl (inl (inl (inr c))))) => Tick c
+          | (inl (inl (inl (inr n)))) => Reply n
+          | inl (inl (inr c)) => Flip c
+          | inl (inr tt) => Head
+          | inr tt => Tail
+          end.
+
+  Definition f: Msg -> (nat + nat + nat + nat + unit + unit) :=
+    fun m =>
+      match m with
+      | Time_at c => (inl (inl (inl (inl (inl c)))))
+      | Tick c => (inl (inl (inl (inl (inr c)))))
+      | Reply n => (inl (inl (inl (inr n))))
+      | Flip c => (inl (inl (inr c)))
+      | Head => inl (inr tt)
+      | Tail => inr tt
+      end.
+
+  Instance msg_countable: Countable Msg.
+  Proof.
+    apply inj_countable with (f:=f) (g:=fun x => Some (g x)).
+    intros [| | | | |]; simpl; auto.
+  Qed.
+
+  Definition ctx (m:Msg) (s:Local_state): option Local_state :=
+    match m, s with
+    | Tick i, T n None => Some (T n (Some (Ticking i)))
+    | Time_at j, T n None => Some (T n (Some (Ans j)))
+    | Flip c, C i j None => Some (C i j (Some (Flip1 c)))
+    | Reply n, C i j (Some (Waiting c)) => Some (C i j (Some (Flip2 n c)))
+    | _, _ => None
+    end.
+
+  Definition trans (s:Local_state): option (Local_state * option (Msg * A_id)) :=
+    match s with
+    | T n (Some (Ans j)) => Some (T n None, Some (Reply n, j))
+    | T n (Some (Ticking i)) => Some (T (n+1) None, Some (Tick i, i))
+    | C i j (Some (Flip1 c)) => Some (C i j (Some (Waiting c)), Some (Time_at i, j))
+    | C i j (Some (Flip2 n c)) => Some (C i j None, Some (if (Nat.even n) then Head else Tail , c))
+    | _ => None
+    end.
+
+  Check (confluence _ _ ctx trans).
+  (* Lots of reuse here – might be interesting to look at composing specs *)
+End Flip.

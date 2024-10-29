@@ -28,17 +28,19 @@ Tactic Notation "is_eq" ident(a) ident(b) :=
 Section AbstractActors.
   (** Syntax / setup *)
   (* The appendix indexes everything, but for now we will assume that all actors
-have the same type of local state, messages and transition functions*)
+     have the same type of local state, messages and transition functions.
+     In practice this actually does not matter at all, since Σ could be a sum type
+   *)
 
   (* Local states and messages *)
-  Parameter Σ : Set.
-  Parameter M : Set.
+  Variable Σ : Set.
+  Variable M : Set.
   (* The type of messages must be countable and have decidable equality in order to form multisets *)
   Context `{M_count: Countable M}.
 
   (* The context contains denotations for messages (like a method table)*)
   Definition context := M -> (Σ -> option Σ).
-  Parameter ctx : context.
+  Variable ctx : context.
 
   (* A queue is a multiset of messages *)
   Notation queue := (gmultiset M).
@@ -52,7 +54,7 @@ have the same type of local state, messages and transition functions*)
   (* A transition function is a partial function from states to states that may
 emit a message *)
   Definition transition_function := (Σ -> option (Σ * option (M * tid))).
-  Parameter T: transition_function.
+  Variable T: transition_function.
 
   (** Semantics *)
   Variant stepG (i:tid): config -> config -> Prop :=
@@ -326,4 +328,24 @@ emit a message *)
       + eapply estepPop; simp; eauto.
         apply insert_commute; eauto.
   Qed.
+
+
+  Variable step: tid -> config -> config -> Prop.
+  Parameter step_correspondence: forall i o o', step i o o' <-> stepG i o o'.
+
+  Theorem step_confluence: forall i j o oa ob,
+      i <> j ->
+      step i o oa ->
+      step j o ob ->
+      exists o', step j oa o' /\ step i ob o'.
+  Proof.
+    intros.
+    epose proof confluence o oa ob _ _ H as (?o & ?stepa & ?stepb).
+    { now apply step_correspondence. }
+    { now apply step_correspondence. }
+    exists o0.
+    split; apply step_correspondence; auto.
+  Qed.
 End AbstractActors.
+
+Arguments stepG {Σ} {M} {_} {_}.
