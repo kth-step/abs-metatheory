@@ -82,13 +82,50 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Qed.
 Hint Resolve t_eq_dec : ott_coq_equality.
+
+Section e_rect_set.
+  Variables
+    (P_e : e -> Set)
+    (P_list_e : list e -> Set).
+
+  Hypothesis
+    (H_e_t : forall (t5:t), P_e (e_t t5))
+    (H_e_var : forall (x5:x), P_e (e_var x5))
+    (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fn5:fn), P_e (e_fn_call fn5 e_list))
+    (H_list_e_nil : P_list_e nil)
+    (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
+
+  Fixpoint e_ott_ind (n:e) : P_e n :=
+    match n as x return P_e x with
+    | (e_t t5) => H_e_t t5
+    | (e_var x5) => H_e_var x5
+    | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_ind (e_l:list e) : P_list_e e_l := match e_l as x return P_list_e x with nil => H_list_e_nil | cons e1 xl => H_list_e_cons e1(e_ott_ind e1)xl (e_list_ott_ind xl) end)) e_list) fn5
+    end.
+End e_rect_set.
+
 #[global] Instance e_eq_dec : EqDecision e.
 Proof.
   unfold EqDecision, Decision.
-  decide equality; auto with ott_coq_equality arith.
+  induction x using e_ott_ind with
+    (P_list_e := fun e_list => forall e_list', {e_list = e_list'} + {e_list <> e_list'});
+    intros; try (destruct y; auto).
   - is_eq t0 t5; auto.
-  - admit.
-Admitted.
+    right.
+    inv 1.
+  - is_eq x5 x0; auto.
+    right.
+    inv 1.
+  - is_eq fn5 fn0; auto.
+    + destruct (IHx l); subst; auto.
+      right; inv 1.
+    + right; inv 1.
+  - destruct e_list'; auto.
+  - destruct e_list'; auto.
+    destruct (IHx e); subst.
+    + destruct (IHx0 e_list'); subst; auto.
+      right; inv 1.
+    + right; inv 1.
+Qed.
 Hint Resolve e_eq_dec : ott_coq_equality.
 
 #[global] Instance rhs_eq_dec : EqDecision rhs.
@@ -121,7 +158,10 @@ Variant task: Set := tsk (p:stmt) (l:s).
 
 #[global]
 Instance s_eq_dec: EqDecision s.
-Admitted.
+Proof.
+  apply gmap_eq_dec.
+  apply t_eq_dec.
+Qed.
 #[global]
 Instance task_eq_dec: EqDecision task.
 Proof.
@@ -132,7 +172,8 @@ Proof.
 Qed.
 
 #[global]
-Instance countable_task: Countable task.
+  Instance countable_task: Countable task.
+(* is there some automation for this? *)
 Admitted.
 
 Notation queue := (gmultiset task).
@@ -259,6 +300,8 @@ Inductive stmt_step (Fs:list F): list CL -> config -> config -> Prop :=
 .
 
 (** Typing *)
+(* based on https://link.springer.com/chapter/10.1007/978-3-642-25271-6_8 *)
+
 Inductive typ_method: list CL -> G -> C -> m -> list e -> T -> Prop :=
 (* TODO: implement this *).
 Inductive typ_CL: G -> CL -> Prop :=
@@ -348,13 +391,14 @@ Definition config_well_typed (Cs: list CL) (G0:G) (conf: config) :=
   forall i ob, conf !! i = Some ob -> cn_well_typed Cs G0 ob.
 
 Theorem type_preservation : forall (Fs: list F) (Cs: list CL) (G0: G),
-  Forall (typ_F G0) Fs ->
-  Forall (typ_CL G0) Cs ->
-  forall σ σ',
-    config_well_typed Cs G0 σ ->
-    stmt_step Fs Cs σ σ' ->
-    exists G',
-      G0 ⊆ G' /\ config_well_typed Cs G' σ'.
+    Forall (typ_F G0) Fs ->
+    Forall (typ_CL G0) Cs ->
+    forall σ σ',
+      config_well_typed Cs G0 σ ->
+      stmt_step Fs Cs σ σ' ->
+      exists G',
+        G0 ⊆ G' /\ config_well_typed Cs G' σ'.
+Proof.
 Admitted.
 
 (*TODO: subject reduction for stmt_step *)
