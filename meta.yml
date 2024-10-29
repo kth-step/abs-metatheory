@@ -4,6 +4,7 @@ shortname: abs-metatheory
 organization: kth-step
 community: false
 action: true
+dune: true
 
 synopsis: Formal metatheory in Coq of the ABS language
 
@@ -28,8 +29,8 @@ license:
   identifier: MIT
 
 supported_coq_versions:
-  text: 8.16 or later
-  opam: '{>= "8.16"}'
+  text: 8.18 or later
+  opam: '{>= "8.18"}'
 
 dependencies:
 - opam:
@@ -49,9 +50,8 @@ dependencies:
     [Coq-Std++](https://gitlab.mpi-sws.org/iris/stdpp) 1.9.0 or later
 
 tested_coq_opam_versions:
+- version: '8.19'
 - version: '8.18'
-- version: '8.17'
-- version: '8.16'
 
 namespace: ABS
 
@@ -68,7 +68,7 @@ build: |-
   
   ```shell
   opam repo add coq-released https://coq.inria.fr/opam/released
-  opam install coq.8.18.0 coq-ott coq-equations coq-stdpp
+  opam install coq.8.19.2 coq-ott coq-equations coq-stdpp
   ```
   
   To build when dependencies are installed, do:
