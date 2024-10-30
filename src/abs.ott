@@ -76,6 +76,7 @@ embed
 {{ coq
 
 From stdpp Require Export
+    list
     fin_maps
     gmap.
 }}
@@ -85,13 +86,13 @@ G {{ tex \Gamma }} :: G_ ::=
   {{ coq gmap x ctxv }}
   {{ coq-universe Type }}
    | G [ x1 |-> T1 , ... , xn |-> Tn ] :: M :: add_list
-     {{ coq (fold_right (fun (xT : x * T) (G0 : G) => insert (fst xT) (ctxv_T (snd xT)) G0) [[G]] [[x1 |-> T1 ... xn |-> Tn]]) }}
+     {{ coq (foldr (fun (xT : x * T) (G0 : G) => insert (fst xT) (ctxv_T (snd xT)) G0) [[G]] [[x1 |-> T1 ... xn |-> Tn]]) }}
 
 s {{ tex \sigma }} :: s_ ::=
   {{ coq gmap x t }}
   {{ coq-universe Type }}
    | s [ x1 |-> t1 , ... , xn |-> tn ] :: M :: add_list
-     {{ coq (fold_right (fun (xt : x * t) (s0 : s) => insert (fst xt) (snd xt) s5) [[s]] [[x1 |-> t1 ... xn |-> tn]]) }}
+     {{ coq (foldr (fun (xt : x * t) (s0 : s) => insert (fst xt) (snd xt) s0) [[s]] [[x1 |-> t1 ... xn |-> tn]]) }}
 
 terminals :: terminals_ ::=
   | Bool :: :: bool {{ tex \mathsf{Bool} }}
@@ -130,9 +131,6 @@ formula :: formula_ ::=
 embed
 {{ coq
 
-Definition disjoint {A:Type} (l1 l2: list A): Prop :=
- forall a, In a l1 -> ~ In a l2.
-
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
  e_var_subst_one (e_var x0) x_ y_ := if (eq_x x0 x_) then (e_var y_) else (e_var x0);
@@ -142,7 +140,7 @@ where e_list_subst_one (es:list e) (x_ y_: x) : list e := {
  e_list_subst_one (e0::es) x_ y_ := e_var_subst_one e0 x_ y_ :: e_list_subst_one es x_ y_
 }.
 
-Definition e_var_subst (e5:e) (l:list (x*x)) : e := fold_right (fun '(x', y') e' => e_var_subst_one e' x' y') e5 l.
+Definition e_var_subst (e5:e) (l:list (x*x)) : e := foldr (fun '(x', y') e' => e_var_subst_one e' x' y') e5 l.
 
 Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
  fresh_vars_e _ (e_t _) := True;

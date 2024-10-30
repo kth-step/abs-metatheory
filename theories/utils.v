@@ -1,10 +1,9 @@
-From Coq Require Import List
-  Lia.
+From Coq Require Import Lia.
+From stdpp Require Export list.
 
 Import ListNotations.
 
 Ltac splits := repeat split.
-Ltac inv H :=inversion H ; subst; clear H.
 Tactic Notation "intros*" := repeat intro.
 
 Ltac forward H :=
@@ -14,6 +13,10 @@ Ltac forward H :=
   end.
 Tactic Notation "forward" ident(H) :=
   forward H.
+
+From stdpp Require Import tactics.
+Tactic Notation "is_eq" ident(a) ident(b) :=
+  destruct (decide (a = b)) as [<- | ?].
 
 Section ListLemmas.
   Context {X Y: Type}.
@@ -43,7 +46,6 @@ Section ListLemmas.
       + inv H.
       + destruct p as (((?, ?), ?), ?).
         inv H.
-        inv H0.
         rewrite (IHl l2); auto.
   Qed.
 
@@ -73,7 +75,6 @@ Section ListLemmas.
       + inv H.
       + destruct p as (((?, ?), ?), ?).
         inv H.
-        inv H0.
         rewrite (IHl l2 f); auto.
   Qed.
 
@@ -145,7 +146,7 @@ Section ListLemmas.
   Qed.
 
   Lemma in_split: forall (l1 l2: list X) x,
-      In x (l1 ++ [x] ++ l2).
+      x ∈ (l1 ++ [x] ++ l2).
   Proof.
     induction l1; intros.
     - left; auto.
@@ -209,8 +210,8 @@ Section ListLemmas.
   Qed.
 
   Lemma fold_map {A Z W: Type}: forall (f: W -> Z -> A -> A) (l: list (X*Y*Z*W)) a0,
-      fold_right (fun '(_, _, z, w) a => f w z a) a0 l =
-        fold_right (fun (xt : W * Z) a => f (fst xt) (snd xt) a) a0
+      foldr (fun '(_, _, z, w) a => f w z a) a0 l =
+        foldr (fun (xt : W * Z) a => f (fst xt) (snd xt) a) a0
           (map (fun pat_ : X*Y*Z*W => let (p, y_) := pat_ in let (p0, t_) := p in let (_, _) := p0 in (y_, t_)) l).
   Proof.
     induction l; intros; eauto.
@@ -220,8 +221,8 @@ Section ListLemmas.
   Qed.
 
   Lemma fold_map1 {A Z W: Type}: forall (f: W -> X -> A -> A) (l: list (X*Y*Z*W)) a0,
-      fold_right (fun '(z, _, _, w) a => f w z a) a0 l =
-        fold_right (fun '(z, w) a => f z w a) a0
+      foldr (fun '(z, _, _, w) a => f w z a) a0 l =
+        foldr (fun '(z, w) a => f z w a) a0
           (map (fun '(z, _, _, w) => (w, z)) l).
   Proof.
     induction l; intros; eauto.
@@ -231,8 +232,8 @@ Section ListLemmas.
   Qed.
 
   Lemma fold_map2 {A Z W: Type}: forall (f: Y -> X -> A -> A) (l: list (X*Y*Z*W)) a0,
-      fold_right (fun '(z, w, _, _) a => f w z a) a0 l =
-        fold_right (fun '(z, w) a => f z w a) a0
+      foldr (fun '(z, w, _, _) a => f w z a) a0 l =
+        foldr (fun '(z, w) a => f z w a) a0
           (map (fun '(z, w, _, _) => (w, z)) l).
   Proof.
     induction l; intros; eauto.
@@ -242,8 +243,8 @@ Section ListLemmas.
   Qed.
 
   Lemma fold_map3 {A Z W: Type}: forall (f: W -> Y -> A -> A) (l: list (X*Y*Z*W)) a0,
-      fold_right (fun '(_, z, _, w) a => f w z a) a0 l =
-        fold_right (fun '(z, w) a => f z w a) a0
+      foldr (fun '(_, z, _, w) a => f w z a) a0 l =
+        foldr (fun '(z, w) a => f z w a) a0
           (map (fun '(_, z, _, w) => (w, z)) l).
   Proof.
     induction l; intros; eauto.
@@ -253,8 +254,8 @@ Section ListLemmas.
   Qed.
 
   Lemma fold_map4 {A Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
-      fold_right (fun '(z, w, _, _) a => f z w a) a0 l =
-        fold_right (fun '(z, w) a => f z w a) a0
+      foldr (fun '(z, w, _, _) a => f z w a) a0 l =
+        foldr (fun '(z, w) a => f z w a) a0
           (map (fun '(z, w, _, _) => (z, w)) l).
   Proof.
     induction l; intros; eauto.
@@ -264,8 +265,8 @@ Section ListLemmas.
   Qed.
 
   Lemma fold_map5 {A Z W: Type}: forall (f : _ -> _ -> A -> A) (l: list (X*Y*Z*W)) a0,
-      fold_right (fun '(z, _, _, w) a => f z w a) a0 l =
-        fold_right (fun '(z, w) a => f z w a) a0
+      foldr (fun '(z, _, _, w) a => f z w a) a0 l =
+        foldr (fun '(z, w) a => f z w a) a0
           (map (fun '(z, _, _, w) => (z, w)) l).
   Proof.
     induction l; intros; eauto.
@@ -586,16 +587,12 @@ Proof.
     + apply IHe1; eauto.
 Qed.
 
-Fact disjoint_empty{A:Type}: @disjoint A [] [].
-Proof. easy. Qed.
-
 Lemma disjoint_monotone {A:Type}: forall (l1 l2: list A) a1 a2,
   disjoint (a1::l1) (a2::l2) -> disjoint l1 l2.
 Proof.
   intros.
-  intros ? ? ?.
-    specialize (H a).
-    apply H; now right.
+  intros x ? ?.
+  apply (H x); now right.
 Qed.
 
 Section MapLemmas.
@@ -619,9 +616,9 @@ Section MapLemmas.
   Qed.
 
   Lemma fold_map_reshuffle: forall (l: list (T*x*t*x)) G0,
-      (fold_right (fun (ax : x * T) (G' : G) => insert (fst ax) (ctxv_T (snd ax)) G') G0
+      (foldr (fun (ax : x * T) (G' : G) => insert (fst ax) (ctxv_T (snd ax)) G') G0
          (map (fun pat_ : T * x => let (T_, x_) := pat_ in (x_, T_)) (map (fun '(T_0, x_, _, _) => (T_0, x_)) l)))
-      = (fold_right (fun '(T1, x_, _, _) (G' : G) => insert x_ (ctxv_T T1) G') G0 l).
+      = (foldr (fun '(T1, x_, _, _) (G' : G) => insert x_ (ctxv_T T1) G') G0 l).
   Proof.
     induction l;intros;auto.
     destruct a as (((?T_ & ?x_) & ?t_) & ?y).
@@ -631,16 +628,21 @@ Section MapLemmas.
   Qed.
 
   Lemma fold_add_comm: forall (G0: G) y T_ (upd: list (T*x)),
-      ~ In y (map (fun '(_, y) => y) upd) ->
-      (insert y (ctxv_T T_) (fold_right (fun '(T_, y) G0 => insert y (ctxv_T T_) G0) G0 upd)) =
-        (fold_right (fun '(T_, y) G0 => insert y (ctxv_T T_) G0) (insert y (ctxv_T T_) G0) upd).
+      ~ y ∈ (map (fun '(_, y) => y) upd) ->
+      (insert y (ctxv_T T_) (foldr (fun '(T_, y) G0 => insert y (ctxv_T T_) G0) G0 upd)) =
+        (foldr (fun '(T_, y) G0 => insert y (ctxv_T T_) G0) (insert y (ctxv_T T_) G0) upd).
   Proof.
     induction upd; intros.
     - easy.
     - destruct a; simpl in *.
-      apply Decidable.not_or in H7.
-      destruct H7.
-      rewrite <- IHupd; eauto.
-      setoid_rewrite insert_commute with (i:=x); eauto.
+      is_eq x y.
+      + exfalso.
+        apply H7.
+        left.
+      + rewrite <- IHupd; eauto.
+        setoid_rewrite insert_commute with (i:=x); eauto.
+        intro.
+        apply H7.
+        now right.
   Qed.
 End MapLemmas.

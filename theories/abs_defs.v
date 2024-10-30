@@ -95,16 +95,14 @@ end.
 End e_rect.
 
 From stdpp Require Export
+    list
     fin_maps
     gmap.
 
 
-Notation s := (gmap x t).
+Definition s : Type := gmap x t.
 
-Notation G := (gmap x ctxv).
-
-Definition disjoint {A:Type} (l1 l2: list A): Prop :=
- forall a, In a l1 -> ~ In a l2.
+Definition G : Type := gmap x ctxv.
 
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
@@ -115,7 +113,7 @@ where e_list_subst_one (es:list e) (x_ y_: x) : list e := {
  e_list_subst_one (e0::es) x_ y_ := e_var_subst_one e0 x_ y_ :: e_list_subst_one es x_ y_
 }.
 
-Definition e_var_subst (e5:e) (l:list (x*x)) : e := fold_right (fun '(x', y') e' => e_var_subst_one e' x' y') e5 l.
+Definition e_var_subst (e5:e) (l:list (x*x)) : e := foldr (fun '(x', y') e' => e_var_subst_one e' x' y') e5 l.
 
 Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
  fresh_vars_e _ (e_t _) := True;
@@ -157,7 +155,7 @@ Inductive typ_e : G -> e -> T -> Prop :=    (* defn e *)
 Inductive typ_F : G -> F -> Prop :=    (* defn F *)
  | typ_func_decl : forall (T_x_list:list (T*x)) (G5:G) (T_5:T) (fn5:fn) (e5:e),
       (lookup  fn5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => T_ end ) T_x_list) T_5) ))  ->
-     typ_e  (fold_right (fun (xT : x * T) (G0 : G) => insert (fst xT) (ctxv_T (snd xT)) G0)  G5   (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => (x_,T_) end ) T_x_list) )  e5 T_5 ->
+     typ_e  (foldr (fun (xT : x * T) (G0 : G) => insert (fst xT) (ctxv_T (snd xT)) G0)  G5   (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => (x_,T_) end ) T_x_list) )  e5 T_5 ->
       (NoDup  (map (fun (pat_:(T*x)) => match pat_ with (T_,x_) => x_ end ) T_x_list) )  ->
      typ_F G5 (F_fn T_5 fn5 T_x_list e5).
 (** definitions *)
@@ -173,6 +171,6 @@ Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
  | red_fun_ground : forall (T_x_t_y_list:list (T*x*t*x)) (F'_list F_list:list F) (T_5:T) (fn5:fn) (e5:e) (s5:s),
       (well_formed  e5   s5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => y_ end ) T_x_t_y_list) )  ->
       (disjoint  (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => y_ end ) T_x_t_y_list)   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => x_ end ) T_x_t_y_list) )  ->
-     red_e ((app F_list (app (cons (F_fn T_5 fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (T_,x_) end ) T_x_t_y_list) e5) nil) (app F'_list nil)))) s5 (e_fn_call fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (e_t t_) end ) T_x_t_y_list))  (fold_right (fun (xt : x * t) (s0 : s) => insert (fst xt) (snd xt) s5)  s5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (y_,t_) end ) T_x_t_y_list) )   (e_var_subst  e5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (x_,y_) end ) T_x_t_y_list) ) .
+     red_e ((app F_list (app (cons (F_fn T_5 fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (T_,x_) end ) T_x_t_y_list) e5) nil) (app F'_list nil)))) s5 (e_fn_call fn5 (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (e_t t_) end ) T_x_t_y_list))  (foldr (fun (xt : x * t) (s0 : s) => insert (fst xt) (snd xt) s0)  s5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (y_,t_) end ) T_x_t_y_list) )   (e_var_subst  e5   (map (fun (pat_:(T*x*t*x)) => match pat_ with (T_,x_,t_,y_) => (x_,y_) end ) T_x_t_y_list) ) .
 
 

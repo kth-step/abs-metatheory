@@ -1,10 +1,6 @@
 From ABS Require Import abs_defs
   utils.
 
-From Coq Require Import List
-  FSets.FMapFacts
-  Lia.
-
 From Equations Require Import Equations.
 
 Import ListNotations.
@@ -30,11 +26,8 @@ Lemma subG_add_2: forall (G0 G1: G) y T_,
   subseteq G0 (insert y T_ G1).
 Proof.
   intros.
-  intros ?x_.
-
-  destruct (eq_x y x_); subst.
-  - now rewrite H0, lookup_insert.
-  - now rewrite lookup_insert_ne.
+  replace G0 with (<[y:=T_]> G0) by now apply insert_id.
+  now apply insert_mono.
 Qed.
 
 (* this is stricter than the ABS paper *)
@@ -51,7 +44,7 @@ Lemma fresh_subG: forall G0 s0 (sub_list: list (T*x*t*x)),
   G_vdash_s G0 s0 ->
   fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
   base.NoDup (map (fun '(_,_,_,y)=>y) sub_list) ->
-  subseteq G0 (fold_right (fun '(T_,_,_,y_) G0 => insert y_ (ctxv_T T_) G0) G0 sub_list).
+  subseteq G0 (foldr (fun '(T_,_,_,y_) G0 => insert y_ (ctxv_T T_) G0) G0 sub_list).
 Proof.
   intros.
   induction sub_list.
@@ -75,7 +68,7 @@ Qed.
 
 Lemma fresh_consistent: forall G0 s0 (sub_list: list (T*x*t*x)),
   G_vdash_s G0 s0 ->
-  (forall T_ t_, In (T_, t_) (map (fun '(T_, _, t_, _) => (T_, t_)) sub_list) ->
+  (forall T_ t_, (T_, t_) ∈ (map (fun '(T_, _, t_, _) => (T_, t_)) sub_list) ->
             typ_e G0 (e_t t_) T_) ->
   fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
   base.NoDup (map (fun '(_,_,_,y)=>y) sub_list) ->
@@ -96,17 +89,21 @@ Proof.
     split; eauto with simpl_map.
     assert (T_ = T_0).
     {
-      simpl_map.
+      setoid_rewrite lookup_insert in H1.
       now inv H1.
     }
 
-    assert (In (T_0, t_) (map (fun '(T_, _, t_, _) => (T_, t_)) ((T_, x_, t_, y0) :: sub_list)))
-      by (left; now rewrite H2).
+    assert ((T_0, t_) ∈ (map (fun '(T_, _, t_, _) => (T_, t_)) ((T_, x_, t_, y0) :: sub_list))).
+    {
+      rewrite <- H2.
+      simpl.
+      now left.
+    }
       specialize (H0 _ _ H5).
       inv H0; constructor.
-  - simpl_map.
+  - simplify_map_eq.
     assert (forall (T_ : T) (t_ : t),
-             In (T_, t_) (map (fun '(T_0, _, t_0, _) => (T_0, t_0)) sub_list) ->
+             (T_, t_) ∈ (map (fun '(T_0, _, t_0, _) => (T_0, t_0)) sub_list) ->
              typ_e G0 (e_t t_) T_).
     {
       intros.
@@ -114,10 +111,12 @@ Proof.
       right.
       assumption.
     }
-    pose proof IHsub_list H2 H4 H7 _ _ H1 as (?t_, (?, ?)).
+    setoid_rewrite lookup_insert_ne in H1; auto.
+    epose proof IHsub_list H2 H4 H7 _ _ H1 as (?t_, (?, ?)).
     exists t_0.
-    split; auto with simpl_map.
-    inv H8; constructor.
+    split.
+    + now setoid_rewrite lookup_insert_ne.
+    + inv H8; constructor.
 Qed.
 
 Lemma subG_consistent: forall G1 G2 s0,
@@ -255,7 +254,7 @@ Proof.
              apply H0.
              now left.
           -- constructor.
-             now simpl_map.
+             now setoid_rewrite lookup_insert_ne.
     - simp e_var_subst_one.
       inv H1.
       replace (e_list_subst_one (map (fun pat_ : e * T => let (e_, _) := pat_ in e_) e_T_list) x0 y0)
@@ -289,7 +288,8 @@ Proof.
       + replace (map (fun pat_ : e * T => let (_, T_) := pat_ in T_) (map (fun '(e, T) => (e_var_subst_one e x0 y0, T)) e_T_list))
           with(map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list)
           by (rewrite map_map; apply map_ext; now intros (?, ?)).
-        now simpl_map.
+        setoid_rewrite lookup_insert_ne in H7; auto.
+        setoid_rewrite lookup_insert_ne; auto.
     - inv H.
     - destruct H1; subst.
       + apply H; eauto.
@@ -355,7 +355,7 @@ Proof.
     pose proof fresh_first_e _ _ _ H2.
     pose proof fresh_monotone_e _ _ _ H2.
     epose proof disjoint_monotone _ _ _ _ H3.
-    assert (~ In x_ (map (fun '(_, y) => y) (map (fun '(Ai, _, _, y1) => (Ai, y1)) T_x_t_y_list))).
+    assert (~ x_ ∈ (map (fun '(_, y) => y) (map (fun '(Ai, _, _, y1) => (Ai, y1)) T_x_t_y_list))).
     { intro.
       apply (H3 x_).
       - right.
@@ -368,27 +368,25 @@ Proof.
         now intros (((?, ?), ?), ?).
       - now left.
     }
-    assert (~ In x_ (map (fun '(_, y) => y) (map (fun '(Ai, x1, _, _) => (Ai, x1)) T_x_t_y_list))) as Hinx.
+    assert (~ x_ ∈ (map (fun '(_, y) => y) (map (fun '(Ai, x1, _, _) => (Ai, x1)) T_x_t_y_list))) as Hinx.
     {
       intro.
       apply H5.
       rewrite map_map in H10.
       revert H10.
       clear.
-      induction T_x_t_y_list; try easy.
+      induction T_x_t_y_list ; try easy.
+      destruct a as (((? & ?) & ?) & ?).
       simpl.
-      intros Hx.
-      destruct Hx.
-      - destruct a, p, p.
-        subst.
-        left; reflexivity.
+      inv 1.
+      - left.
       - right.
         apply IHT_x_t_y_list.
         assumption.
     }
     assert ((insert x_ (ctxv_T T_) (fold_right (fun '(Ai, x_0, _, _) (G0 : G) => insert x_0 (ctxv_T Ai) G0) G0 T_x_t_y_list))
               =
-     (fold_right (fun '(Ai, x_, _, _) (G0 : G) => insert x_ (ctxv_T Ai) G0) (insert x_ (ctxv_T T_) G0) T_x_t_y_list))
+     (foldr (fun '(Ai, x_, _, _) (G0 : G) => insert x_ (ctxv_T Ai) G0) (insert x_ (ctxv_T T_) G0) T_x_t_y_list))
       as HMEqualx.
     {
       simplify_map_eq.
@@ -497,7 +495,6 @@ Proof.
            apply in_app_iff in H8.
            destruct H8.
            ++ inv H8;[|contradiction].
-              inv H9.
               apply H7.
            ++ apply subG_type with (G1:=G5); auto.
               apply H2.
@@ -563,45 +560,41 @@ Proof.
     destruct H as ((?, ?), ?).
     assert (e_T_list = map (fun '(T_, _, t_, _) => (e_t t_, T_)) T_x_t_y_list).
     {
-      (* inv H11. *)
       eapply map_split'.
       - replace (map fst e_T_list) with (map (fun pat_ : e * T => let (e_, _) := pat_ in e_) e_T_list) by easy.
         rewrite H4.
         apply map_ext.
         easy.
       - replace (map snd e_T_list) with (map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list) by easy.
-        rewrite H7 in H11.
-        inv H11.
+        rewrite H3.
         rewrite map_map.
         apply map_ext.
         intros.
         now destruct a as (((?, ?), ?), ?).
     }
-    exists (fold_right (fun '(T_, _, _, y) G0 => insert y (ctxv_T T_) G0) G5 T_x_t_y_list).
+    exists (foldr (fun '(T_, _, _, y) G0 => insert y (ctxv_T T_) G0) G5 T_x_t_y_list).
     splits.
     + eapply fresh_subG; eauto.
     +
       (* now what??*)
-      Fail rewrite <- fold_map.
-      admit.
-      (* apply fresh_consistent; eauto. *)
-      (* intros. *)
-      (* apply in_map_iff in H12. *)
-      (* destruct H12 as (Txty, (?, ?)). *)
-      (* apply H6. *)
-      (* inv H12. *)
-      (* rewrite map_map. *)
-      (* apply in_map_iff. *)
-      (* exists Txty. *)
-      (* split; auto. *)
-      (* destruct Txty as (((?, ?), ?), ?). *)
-      (* now inv H15. *)
+      rewrite <- fold_map.
+      apply fresh_consistent; eauto.
+      intros.
+      rewrite elem_of_list_In in H12.
+      apply in_map_iff in H12.
+      destruct H12 as (Txty, (?, ?)).
+      apply H6.
+      inv H12.
+      rewrite map_map.
+      apply in_map_iff.
+      exists Txty.
+      split; auto.
+      destruct Txty as (((?, ?), ?), ?).
+      now inv H15.
 
-    + rewrite H7 in H11.
-      inv H11.
-      apply subst_lemma; auto.
+    + apply subst_lemma; auto.
       * rewrite <- fold_map_reshuffle; eauto.
       * rewrite map_xs in H10.
         apply H10.
-Admitted.
+Qed.
 End FunctionalMetatheory.
