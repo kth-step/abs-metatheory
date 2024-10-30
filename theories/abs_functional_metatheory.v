@@ -576,7 +576,6 @@ Proof.
     splits.
     + eapply fresh_subG; eauto.
     +
-      (* now what??*)
       rewrite <- fold_map.
       apply fresh_consistent; eauto.
       intros.
@@ -591,10 +590,10 @@ Proof.
       split; auto.
       destruct Txty as (((?, ?), ?), ?).
       now inv H15.
-
     + apply subst_lemma; auto.
       * rewrite <- fold_map_reshuffle; eauto.
       * rewrite map_xs in H10.
         apply H10.
 Qed.
+
 End FunctionalMetatheory.
