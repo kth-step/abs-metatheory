@@ -13,7 +13,7 @@ Definition e_call_const_5 : e :=
   e_fn_call "const_5"%string [].
 
 Definition Ctx : G :=
-  Map.add ("const_5"%string) (ctxv_sig (sig_sig [] T_int)) (Map.empty ctxv).
+  insert ("const_5"%string) (ctxv_sig (sig_sig [] T_int)) empty.
 
 Lemma e_const_5_T_int :
  typ_e Ctx e_const_5 T_int.
