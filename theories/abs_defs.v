@@ -48,6 +48,12 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_z : ott_coq_equality.
+Definition fut : Set := nat. (*r future *)
+Lemma eq_fut: forall (x y : fut), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_fut : ott_coq_equality.
 
 Inductive T : Set :=  (*r ground type *)
  | T_bool : T
@@ -55,7 +61,8 @@ Inductive T : Set :=  (*r ground type *)
 
 Inductive t : Set :=  (*r ground term *)
  | t_b (b5:b) (*r boolean *)
- | t_int (z5:z) (*r integer *).
+ | t_int (z5:z) (*r integer *)
+ | t_fut (fut5:fut) (*r future *).
 
 Inductive sig : Set := 
  | sig_sig (_:list T) (T_5:T).
@@ -67,7 +74,8 @@ Inductive e : Set :=  (*r expression *)
 
 Inductive ctxv : Set := 
  | ctxv_T (T5:T)
- | ctxv_sig (sig5:sig).
+ | ctxv_sig (sig5:sig)
+ | ctxv_fut (T5:T).
 
 Inductive F : Set :=  (*r function definition *)
  | F_fn (T_5:T) (fn5:fn) (_:list (T*x)) (e5:e).

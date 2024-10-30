@@ -37,6 +37,11 @@ metavar z ::=
   {{ com integer }}
   {{ coq-equality }}
   {{ coq Z }}
+metavar fut ::=
+  {{ lex numeral }}
+  {{ com future }}
+  {{ coq-equality }}
+  {{ coq nat }}
 grammar
 T :: T_ ::=
    {{ com ground type }}
@@ -53,6 +58,8 @@ t :: t_ ::=
     {{ com boolean }}
   | z :: :: int
     {{ com integer }}
+  | fut :: :: fut
+    {{ com future }}
 
 e :: e_ ::=
   {{ com expression }}
@@ -71,6 +78,7 @@ sig :: sig_ ::=
 ctxv :: ctxv_ ::=
      | T :: :: T
      | sig :: :: sig
+     | Fut < T > :: :: fut
 
 embed
 {{ coq
