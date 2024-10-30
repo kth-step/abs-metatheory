@@ -154,7 +154,7 @@ Proof.
   apply prod_eq_dec.
 Qed.
 
-Variant task: Set := tsk (p:stmt) (l:s).
+Variant task: Type := tsk (p:stmt) (l:s).
 
 #[global]
 Instance s_eq_dec: EqDecision s.
@@ -178,7 +178,7 @@ Admitted.
 
 Notation queue := (gmultiset task).
 
-Inductive cn: Set :=
+Inductive cn: Type :=
 | cn_future (f0:f) (v:option t)
 | cn_object (C0:C) (a:s) (p:option task) (q: queue)
 | cn_invoc (o0:o) (f0:f) (m0:m) (vs: list t).
