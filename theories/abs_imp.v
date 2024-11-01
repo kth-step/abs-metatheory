@@ -1,44 +1,11 @@
+From stdpp Require Import prelude natmap gmultiset.
+From ABS Require Import abs_defs utils abs_functional_metatheory.
+
 (* Imperative semantics based on FASE-20 paper – not generated from Ott, but probably should be *)
-From stdpp Require Export
-  tactics
-  fin_maps
-  natmap
-  gmultiset
-  sets
-  relations
-.
-From ABS Require Import abs_defs
-utils
-abs_functional_metatheory
-.
 
 Tactic Notation "simp" := simplify_map_eq.
 Tactic Notation "is_eq" ident(a) ident(b) :=
   destruct (decide (a = b)) as [<- | ?].
-
-Definition f : Set := string. (*r future names *)
-Lemma eq_f: forall (x y : f), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-
-Definition o : Set := string. (*r object names *)
-Lemma eq_o: forall (x y : o), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-
-Definition m : Set := string. (*r method names *)
-Lemma eq_m: forall (x y : m), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-
-Definition C : Set := string. (*r class names *)
-Lemma eq_C: forall (x y : C), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
 
 Inductive rhs : Set :=
 | rhs_e (e0:e)
@@ -91,7 +58,7 @@ Section e_rect_set.
   Hypothesis
     (H_e_t : forall (t5:t), P_e (e_t t5))
     (H_e_var : forall (x5:x), P_e (e_var x5))
-    (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fn5:fn), P_e (e_fn_call fn5 e_list))
+    (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fc5:fc), P_e (e_fn_call fc5 e_list))
     (H_list_e_nil : P_list_e nil)
     (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
 
@@ -115,7 +82,7 @@ Proof.
   - is_eq x5 x0; auto.
     right.
     inv 1.
-  - is_eq fn5 fn0; auto.
+  - is_eq fc5 fc0; auto.
     + destruct (IHx l); subst; auto.
       right; inv 1.
     + right; inv 1.
