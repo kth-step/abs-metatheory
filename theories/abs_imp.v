@@ -1,5 +1,5 @@
 From stdpp Require Import prelude strings fin_maps natmap gmap gmultiset.
-From ABS Require Import abs_defs utils abs_functional_metatheory.
+From ABS Require Import abs_defs list_util abs_functional_metatheory.
 
 (* Imperative semantics based on FASE-20 paper – not generated from Ott, but probably should be *)
 
