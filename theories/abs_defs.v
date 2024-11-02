@@ -6,15 +6,12 @@ Require Import List.
 Require Import Ott.ott_list_core.
 
 
-Require Export Ascii.
-Require Export String.
-Require Export ZArith.
-Require Import Lia.
 From Equations Require Import Equations.
+From stdpp Require Import prelude strings gmap.
 
 #[export] Hint Resolve bool_dec : ott_coq_equality.
-#[export] Hint Resolve ascii_dec : ott_coq_equality.
-#[export] Hint Resolve Pos.eq_dec : ott_coq_equality.
+#[export] Hint Resolve Ascii.ascii_dec : ott_coq_equality.
+#[export] Hint Resolve BinPos.Pos.eq_dec : ott_coq_equality.
 
 (** * ABS Definitions *)
 
@@ -125,11 +122,7 @@ Fixpoint e_ott_ind (n:e) : P_e n :=
 end.
 
 End e_rect.
-
-From stdpp Require Export
-    list
-    fin_maps
-    gmap.
+From stdpp Require Import gmap.
 
 
 Definition s : Type := gmap x t.

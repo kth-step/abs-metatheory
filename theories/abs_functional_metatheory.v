@@ -1,8 +1,6 @@
+From stdpp Require Import prelude gmap.
 From ABS Require Import abs_defs utils.
-
 From Equations Require Import Equations.
-
-Import ListNotations.
 
 (** * ABS Functional Metatheory *)
 

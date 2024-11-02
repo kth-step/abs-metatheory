@@ -1,4 +1,4 @@
-From stdpp Require Import prelude natmap gmultiset.
+From stdpp Require Import prelude strings fin_maps natmap gmap gmultiset.
 From ABS Require Import abs_defs utils abs_functional_metatheory.
 
 (* Imperative semantics based on FASE-20 paper – not generated from Ott, but probably should be *)
@@ -11,8 +11,7 @@ Inductive rhs : Set :=
 | rhs_e (e0:e)
 (* we invoke on an object directly, not by some mysterious evaluation to object identifiers *)
 | rhs_invoc (o0:o) (m0:m) (es:list e)
-| rhs_get (f0:f)
-.
+| rhs_get (f0:f).
 
 Inductive stmt : Set :=
 | stmt_seq (s1 s2: stmt)
@@ -100,7 +99,7 @@ Proof.
   unfold EqDecision, Decision.
   decide equality; auto with ott_coq_equality arith.
   - apply e_eq_dec.
-  - apply list_eq_dec.
+  - apply list_eq_dec; apply e_eq_dec.
 Qed.
 Hint Resolve rhs_eq_dec : ott_coq_equality.
 
