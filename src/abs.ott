@@ -97,11 +97,6 @@ ctxv :: ctxv_ ::=
      | sig :: :: sig
      | Fut < T > :: :: fut
 
-embed
-{{ coq
-From stdpp Require Import gmap.
-}}
-
 grammar
 G {{ tex \Gamma }} :: G_ ::=
   {{ coq gmap x ctxv }}

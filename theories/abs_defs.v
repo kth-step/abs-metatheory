@@ -100,6 +100,10 @@ Inductive ctxv : Set :=
 
 Inductive F : Set :=  (*r function definition *)
  | F_fn (T_5:T) (fc5:fc) (_:list (T*x)) (e5:e).
+
+Definition s : Type := gmap x t.
+
+Definition G : Type := gmap x ctxv.
 (** induction principles *)
 Section e_rect.
 
@@ -122,12 +126,6 @@ Fixpoint e_ott_ind (n:e) : P_e n :=
 end.
 
 End e_rect.
-From stdpp Require Import gmap.
-
-
-Definition s : Type := gmap x t.
-
-Definition G : Type := gmap x ctxv.
 
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
