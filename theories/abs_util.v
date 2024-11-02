@@ -2,6 +2,8 @@ From stdpp Require Import prelude fin_maps.
 From ABS Require Import abs_defs list_util.
 From Equations Require Import Equations.
 
+(** * ABS Utility Results *)
+
 (* some slightly ad-hoc equalities *)
 Lemma subst_fst_commute: forall x0 x1 e_T_list,
   map (fun x : e * T => let (e_, _) := let '(e_, T_) := x in (e_var_subst_one e_ x0 x1, T_) in e_) e_T_list =

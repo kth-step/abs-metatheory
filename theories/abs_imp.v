@@ -1,6 +1,8 @@
 From stdpp Require Import prelude strings fin_maps natmap gmap gmultiset.
 From ABS Require Import abs_defs list_util abs_functional_metatheory.
 
+(** * ABS Imperative Metatheory *)
+
 (* Imperative semantics based on FASE-20 paper – not generated from Ott, but probably should be *)
 
 Tactic Notation "simp" := simplify_map_eq.

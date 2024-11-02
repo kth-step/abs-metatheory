@@ -1,5 +1,7 @@
 From stdpp Require Import prelude fin_maps.
 
+(** * List Utility Results *)
+
 Ltac splits := repeat split.
 Tactic Notation "intros*" := repeat intro.
 
