@@ -89,6 +89,34 @@ e :: e_ ::=
   | e [ x1 |-> y1 , ... , xn |-> yn ] :: M :: subst_var
     {{ coq (e_var_subst [[e]] [[x1 |-> y1 ... xn |-> yn]]) }}
 
+rhs :: rhs_ ::=
+  {{ com right-hand side in assignment }}
+| e :: :: e
+| o ! m ( e1 , ... , en ) :: :: invoc
+  {{ com we invoke on an object directly, not by some mysterious evaluation to object identifiers }}
+| f . get :: :: get
+
+stmt :: stmt_ ::=
+  {{ com statement }}
+| stmt1 ; stmt2 :: :: seq
+| skip :: :: skip
+| x := rhs :: :: asgn
+| if e { stmt1 } else { stmt2 } :: :: cond
+| while e { stmt } :: :: loop
+| return e :: :: ret
+
+M :: M_ ::=
+  {{ com method definition }}
+| T m ( T1 x1 , ... , Ti xi ) { T'1 y1 ; ... ; T'j yj ; stmt } :: :: m
+
+CL :: '' ::=
+  {{ com class definition }}
+| class C { T1 x1 ; ... ; Ti xi ; M1 ... Mj }  :: :: class
+
+P :: '' ::=
+  {{ com program }}
+| CL1 ... CLn { T1 x1 ; ... ; Ti xi ; stmt } :: :: program
+
 sig :: sig_ ::=
      | T1 , ... , Tn -> T :: :: sig
 

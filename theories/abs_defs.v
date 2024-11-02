@@ -98,12 +98,34 @@ Inductive ctxv : Set :=
  | ctxv_sig (sig5:sig)
  | ctxv_fut (T5:T).
 
-Inductive F : Set :=  (*r function definition *)
- | F_fn (T_5:T) (fc5:fc) (_:list (T*x)) (e5:e).
+Inductive rhs : Set :=  (*r right-hand side in assignment *)
+ | rhs_e (e5:e)
+ | rhs_invoc (o5:o) (m5:m) (_:list e) (*r we invoke on an object directly, not by some mysterious evaluation to object identifiers *)
+ | rhs_get (f5:f).
 
 Definition s : Type := gmap x t.
 
+Inductive F : Set :=  (*r function definition *)
+ | F_fn (T_5:T) (fc5:fc) (_:list (T*x)) (e5:e).
+
 Definition G : Type := gmap x ctxv.
+
+Inductive stmt : Set :=  (*r statement *)
+ | stmt_seq (stmt1:stmt) (stmt2:stmt)
+ | stmt_skip : stmt
+ | stmt_asgn (x5:x) (rhs5:rhs)
+ | stmt_cond (e5:e) (stmt1:stmt) (stmt2:stmt)
+ | stmt_loop (e5:e) (stmt5:stmt)
+ | stmt_ret (e5:e).
+
+Inductive M : Set :=  (*r method definition *)
+ | M_m (T_5:T) (m5:m) (_:list (T*x)) (_:list (T*x)) (stmt5:stmt).
+
+Inductive CL : Set :=  (*r class definition *)
+ | class (C5:C) (_:list (T*x)) (_:list M).
+
+Inductive P : Set :=  (*r program *)
+ | program (_:list CL) (_:list (T*x)) (stmt5:stmt).
 (** induction principles *)
 Section e_rect.
 

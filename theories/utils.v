@@ -11,7 +11,6 @@ Ltac forward H :=
 Tactic Notation "forward" ident(H) :=
   forward H.
 
-From stdpp Require Import tactics.
 Tactic Notation "is_eq" ident(a) ident(b) :=
   destruct (decide (a = b)) as [<- | ?].
 
@@ -594,7 +593,7 @@ Qed.
 
 Section MapLemmas.
 
-  Context `{FinMap x M}.
+  Context `{FinMap x mp}.
 
   Lemma neq_none_is_some: forall A (x: option A),
       x <> None -> exists y, x = Some y.
@@ -603,7 +602,7 @@ Section MapLemmas.
     contradiction.
   Qed.
 
-  Lemma map_neq_none_is_some {A}: forall (m: M A) x,
+  Lemma map_neq_none_is_some {A}: forall (m: mp A) x,
       lookup x m <> None ->
       exists y, lookup x m = Some y.
   Proof.

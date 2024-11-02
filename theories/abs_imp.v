@@ -7,32 +7,8 @@ Tactic Notation "simp" := simplify_map_eq.
 Tactic Notation "is_eq" ident(a) ident(b) :=
   destruct (decide (a = b)) as [<- | ?].
 
-Inductive rhs : Set :=
-| rhs_e (e0:e)
-(* we invoke on an object directly, not by some mysterious evaluation to object identifiers *)
-| rhs_invoc (o0:o) (m0:m) (es:list e)
-| rhs_get (f0:f).
-
-Inductive stmt : Set :=
-| stmt_seq (s1 s2: stmt)
-| stmt_skip
-| stmt_asgn (x0:x) (r:rhs)
-| stmt_cond (e0:e) (s1 s2: stmt)
-| stmt_loop (e0:e) (s: stmt)
-| stmt_ret (e0:e).
-
-Variant M : Set :=  (*r method definition *)
- | M_m (T_5:T) (m0:m) (params decl:list (T*x)) (body:stmt).
-
-(* Class definition *)
-Variant CL: Set :=
-  | class (name:C) (_: list(T*x)) (_: list M).
-
 Equations get_class_name (CL0:CL): C := {get_class_name (class name _ _) := name}.
 Equations get_fields (CL0:CL): list (T*x) := {get_fields (class _ fields _) := fields}.
-
-Variant P: Set :=
-  | program (_: list CL) (decl : list (T*x)) (main: stmt).
 
 Lemma cons_neq{X:Type}: forall (x:X) l, x :: l <> l.
 Proof.
