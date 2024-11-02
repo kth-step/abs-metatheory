@@ -1,15 +1,12 @@
-From ABS Require Import abs_defs
-  utils.
-
+From stdpp Require Import prelude gmap.
+From ABS Require Import abs_defs utils.
 From Equations Require Import Equations.
-
-Import ListNotations.
 
 (** * ABS Functional Metatheory *)
 
 Section FunctionalMetatheory.
 
-Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fn), x_ <> fn_).
+Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fc), x_ <> fn_).
 Hypothesis (vars_well_typed: forall (x_:x) (G0: G) T0,
              lookup x_ G0 = Some T0 ->
              exists T_, T0 = ctxv_T T_).
@@ -550,7 +547,7 @@ Proof.
 
   - (* RED_FUN_GROUND *)
     intros.
-    set (fn_def:=(F_fn T_5 fn5 (map (fun '(T_, x_, _, _) => (T_, x_)) T_x_t_y_list) e5)).
+    set (fn_def:=(F_fn T_5 fc5 (map (fun '(T_, x_, _, _) => (T_, x_)) T_x_t_y_list) e5)).
     pose proof utils.in_split F_list F'_list fn_def .
     rewrite app_nil_r in *.
     pose proof Forall_forall (typ_F G5) (F_list ++ [fn_def] ++ F'_list) as (? & _).

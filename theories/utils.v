@@ -1,7 +1,4 @@
-From Coq Require Import Lia.
-From stdpp Require Export list.
-
-Import ListNotations.
+From stdpp Require Import prelude fin_maps.
 
 Ltac splits := repeat split.
 Tactic Notation "intros*" := repeat intro.

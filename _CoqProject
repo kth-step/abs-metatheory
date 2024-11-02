@@ -1,6 +1,6 @@
 -Q theories ABS
 
--arg -w -arg -deprecated-hint-without-locality
+-arg -w -arg -deprecated-syntactic-definition-since-8.20
 
 theories/abs_defs.v
 theories/abs_examples.v

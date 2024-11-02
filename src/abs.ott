@@ -1,14 +1,11 @@
 embed
 {{ coq
-Require Export Ascii.
-Require Export String.
-Require Export ZArith.
-Require Import Lia.
 From Equations Require Import Equations.
+From stdpp Require Import prelude strings gmap.
 
 #[export] Hint Resolve bool_dec : ott_coq_equality.
-#[export] Hint Resolve ascii_dec : ott_coq_equality.
-#[export] Hint Resolve Pos.eq_dec : ott_coq_equality.
+#[export] Hint Resolve Ascii.ascii_dec : ott_coq_equality.
+#[export] Hint Resolve BinPos.Pos.eq_dec : ott_coq_equality.
 
 (** * ABS Definitions *)
 }}
@@ -17,7 +14,7 @@ indexvar i, j, n ::=
       {{ coq nat }}
       {{ coq-equality }}
       {{ com index variables (subscripts) }}
-metavar fn ::=
+metavar fc ::=
       {{ lex Alphanum }}
       {{ coq string }}
       {{ coq-equality }}
@@ -39,9 +36,29 @@ metavar z ::=
   {{ coq Z }}
 metavar fut ::=
   {{ lex numeral }}
-  {{ com future }}
+  {{ com future type }}
   {{ coq-equality }}
   {{ coq nat }}
+metavar f ::=
+  {{ lex alphanum }}
+  {{ com future name }}
+  {{ coq-equality }}
+  {{ coq string }}
+metavar o ::=
+  {{ lex alphanum }}
+  {{ com object name }}
+  {{ coq-equality }}
+  {{ coq string }}
+metavar m ::=
+  {{ lex alphanum }}
+  {{ com method name }}
+  {{ coq-equality }}
+  {{ coq string }}
+metavar C ::=
+  {{ lex alphanum }}
+  {{ com class name }}
+  {{ coq-equality }}
+  {{ coq string }}
 grammar
 T :: T_ ::=
    {{ com ground type }}
@@ -50,7 +67,7 @@ T :: T_ ::=
 
 F :: F_ ::=
   {{ com function definition }}
-  | def T fn ( T1 x1 , ... , Tn xn ) = e ; :: :: fn
+  | def T fc ( T1 x1 , ... , Tn xn ) = e ; :: :: fn
 
 t :: t_ ::=
   {{ com ground term }}
@@ -67,7 +84,7 @@ e :: e_ ::=
     {{ com term }}
   | x :: :: var
     {{ com variable }}
-  | fn ( e1 , ... , en ) :: :: fn_call
+  | fc ( e1 , ... , en ) :: :: fn_call
     {{ com function call }}
   | e [ x1 |-> y1 , ... , xn |-> yn ] :: M :: subst_var
     {{ coq (e_var_subst [[e]] [[x1 |-> y1 ... xn |-> yn]]) }}
@@ -79,15 +96,6 @@ ctxv :: ctxv_ ::=
      | T :: :: T
      | sig :: :: sig
      | Fut < T > :: :: fut
-
-embed
-{{ coq
-
-From stdpp Require Export
-    list
-    fin_maps
-    gmap.
-}}
 
 grammar
 G {{ tex \Gamma }} :: G_ ::=
@@ -121,8 +129,8 @@ formula :: formula_ ::=
     {{ coq (lookup [[x]] [[G]] = Some (ctxv_T [[T]])) }}
   | s ( x ) = t :: M :: s_eq_t
     {{ coq (lookup [[x]] [[s]] = Some ([[t]])) }}
-  | G ( fn ) = sig :: M :: G_fn_eq_sig
-    {{ coq (lookup [[fn]] [[G]] = Some (ctxv_sig [[sig]])) }}
+  | G ( fc ) = sig :: M :: G_fn_eq_sig
+    {{ coq (lookup [[fc]] [[G]] = Some (ctxv_sig [[sig]])) }}
   | distinct ( x1 , ... , xn ) :: M :: distinct_vars
     {{ coq (NoDup [[x1 ... xn]]) }}
   | fresh ( x1 , ... , xn , e ) :: M :: fresh_e
@@ -188,9 +196,9 @@ defn
   G |- x : T
 
   G |- e1 : T1 ... G |- en : Tn
-  G ( fn ) = T1 , ... , Tn -> T
+  G ( fc ) = T1 , ... , Tn -> T
   ----------------------------- :: func_expr
-  G |- fn ( e1 , ... , en ) : T
+  G |- fc ( e1 , ... , en ) : T
 
 defns
   function_well_typing :: typ_ ::=
@@ -199,11 +207,11 @@ defn
   G |- F :: :: F :: ''
     {{ com well-typed function declaration }} by
 
-  G ( fn ) = T1 , ... , Tn -> T
+  G ( fc ) = T1 , ... , Tn -> T
   G [ x1 |-> T1 , ... , xn |-> Tn ] |- e : T
   distinct (x1 , ... , xn)
   ------------------------------------------- :: func_decl
-  G |- def T fn ( T1 x1 , ... , Tn xn ) = e ;
+  G |- def T fc ( T1 x1 , ... , Tn xn ) = e ;
 
 defns
   evaluation_reduction :: red_ ::=
@@ -218,9 +226,9 @@ defn
 
   F1 ... Fn , s |- e ~> s' |- e'
   ------------------------------------------------------------------------------------------------------------- :: fun_exp
-  F1 ... Fn , s |- fn ( e1 , ... , ei , e , e'1 , ... , e'j ) ~> s' |- fn ( e1 , ... , ei , e' , e'1 , ... , e'j )
+  F1 ... Fn , s |- fc ( e1 , ... , ei , e , e'1 , ... , e'j ) ~> s' |- fc ( e1 , ... , ei , e' , e'1 , ... , e'j )
 
   well_formed (y1 , ... , yn , e, s)
   disjoint ((y1 , ... , yn) , (x1 , ... , xn))
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- :: fun_ground
-  F1 ... Fi def T fn ( T1 x1 , ... , Tn xn ) = e ; F'1 ... F'j , s |- fn ( t1 , ... , tn ) ~> s [ y1 |-> t1 , ... , yn |-> tn ] |- e [ x1 |-> y1 , ... , xn |-> yn ]
+  F1 ... Fi def T fc ( T1 x1 , ... , Tn xn ) = e ; F'1 ... F'j , s |- fc ( t1 , ... , tn ) ~> s [ y1 |-> t1 , ... , yn |-> tn ] |- e [ x1 |-> y1 , ... , xn |-> yn ]

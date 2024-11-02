@@ -1,5 +1,5 @@
+From stdpp Require Import prelude strings.
 From ABS Require Import abs_defs.
-From stdpp Require Import prelude base.
 
 (** * ABS Examples *)
 
