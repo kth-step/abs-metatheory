@@ -124,6 +124,9 @@ Inductive M : Set :=  (*r method definition *)
 Inductive CL : Set :=  (*r class definition *)
  | class (C5:C) (_:list (T*x)) (_:list M).
 
+Inductive task : Type := 
+ | tsk (stmt5:stmt) (s5:s).
+
 Inductive P : Set :=  (*r program *)
  | program (_:list CL) (_:list (T*x)) (stmt5:stmt).
 (** induction principles *)

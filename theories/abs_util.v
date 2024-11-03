@@ -1,4 +1,4 @@
-From stdpp Require Import prelude fin_maps.
+From stdpp Require Import prelude fin_maps countable.
 From ABS Require Import abs_defs list_util.
 From Equations Require Import Equations.
 
@@ -358,3 +358,15 @@ Proof.
   - apply e_eq_dec.
   - apply e_eq_dec.
 Qed.
+
+#[export] Instance task_eq_dec: EqDecision task.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+  - by destruct (decide (s5 = s0)); [left|right].
+  - apply stmt_eq_dec.
+Defined.
+
+#[export] Instance countable_task: Countable task.
+(* is there some automation for this? *)
+Admitted.

@@ -8,20 +8,6 @@ From ABS Require Import list_util abs_defs abs_util abs_functional_metatheory.
 Equations get_class_name (CL0:CL): C := {get_class_name (class name _ _) := name}.
 Equations get_fields (CL0:CL): list (T*x) := {get_fields (class _ fields _) := fields}.
 
-Variant task: Type := tsk (p:stmt) (l:s).
-
-#[export] Instance task_eq_dec: EqDecision task.
-Proof.
-  unfold EqDecision, Decision.
-  decide equality; auto with ott_coq_equality.
-  - by destruct (decide (l = l0)); [left|right].
-  - apply stmt_eq_dec.
-Defined.
-
-#[export] Instance countable_task: Countable task.
-(* is there some automation for this? *)
-Admitted.
-
 Notation queue := (gmultiset task).
 
 Inductive cn: Type :=
@@ -44,6 +30,7 @@ Equations bind_params_aux (s0:s) (vs: list t) (params: list (T*x)): s := {
   bind_params_aux s0 _ [] := s0;
   bind_params_aux s0 (v::vs) ((_,x)::Txs) := insert x v (bind_params_aux s0 vs Txs)
   }.
+
 Definition bind_params := bind_params_aux empty.
 
 Equations bind (m0:m) (vs: list t) (f0:f) (CL0:CL) : option task := {

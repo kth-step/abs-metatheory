@@ -125,18 +125,21 @@ ctxv :: ctxv_ ::=
      | sig :: :: sig
      | Fut < T > :: :: fut
 
-grammar
-G {{ tex \Gamma }} :: G_ ::=
-  {{ coq gmap x ctxv }}
-  {{ coq-universe Type }}
-   | G [ x1 |-> T1 , ... , xn |-> Tn ] :: M :: add_list
-     {{ coq (foldr (fun (xT : x * T) (G0 : G) => insert (fst xT) (ctxv_T (snd xT)) G0) [[G]] [[x1 |-> T1 ... xn |-> Tn]]) }}
-
 s {{ tex \sigma }} :: s_ ::=
   {{ coq gmap x t }}
   {{ coq-universe Type }}
    | s [ x1 |-> t1 , ... , xn |-> tn ] :: M :: add_list
      {{ coq (foldr (fun (xt : x * t) (s0 : s) => insert (fst xt) (snd xt) s0) [[s]] [[x1 |-> t1 ... xn |-> tn]]) }}
+
+task :: '' ::=
+ {{ coq-universe Type }}
+| tsk ( stmt , s ) :: :: tsk
+
+G {{ tex \Gamma }} :: G_ ::=
+  {{ coq gmap x ctxv }}
+  {{ coq-universe Type }}
+   | G [ x1 |-> T1 , ... , xn |-> Tn ] :: M :: add_list
+     {{ coq (foldr (fun (xT : x * T) (G0 : G) => insert (fst xT) (ctxv_T (snd xT)) G0) [[G]] [[x1 |-> T1 ... xn |-> Tn]]) }}
 
 terminals :: terminals_ ::=
   | Bool :: :: bool {{ tex \mathsf{Bool} }}
