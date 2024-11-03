@@ -16,6 +16,8 @@ Tactic Notation "forward" ident(H) :=
 Tactic Notation "is_eq" ident(a) ident(b) :=
   destruct (decide (a = b)) as [<- | ?].
 
+Tactic Notation "simp" := simplify_map_eq.
+
 Section ListLemmas.
   Context {X Y: Type}.
 
@@ -357,3 +359,11 @@ Section ListLemmas.
   Qed.
 
 End ListLemmas.
+
+Lemma cons_neq {X:Type}: forall (x:X) l, x :: l <> l.
+Proof.
+  induction l; auto.
+  intro.
+  inversion H; subst.
+  now apply IHl.
+Qed.

@@ -285,4 +285,76 @@ Section MapLemmas.
         apply H7.
         now right.
   Qed.
+
 End MapLemmas.
+
+#[export] Instance t_eq_dec : EqDecision t.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+Defined.
+#[export] Hint Resolve t_eq_dec : ott_coq_equality.
+
+Section e_rec.
+  Variables
+    (P_e : e -> Set)
+    (P_list_e : list e -> Set).
+
+  Hypothesis
+    (H_e_t : forall (t5:t), P_e (e_t t5))
+    (H_e_var : forall (x5:x), P_e (e_var x5))
+    (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fc5:fc), P_e (e_fn_call fc5 e_list))
+    (H_list_e_nil : P_list_e nil)
+    (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
+
+  Fixpoint e_ott_rec (n:e) : P_e n :=
+    match n as x return P_e x with
+    | (e_t t5) => H_e_t t5
+    | (e_var x5) => H_e_var x5
+    | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_rec (e_l:list e) : P_list_e e_l := match e_l as x return P_list_e x with nil => H_list_e_nil | cons e1 xl => H_list_e_cons e1(e_ott_rec e1)xl (e_list_ott_rec xl) end)) e_list) fn5
+    end.
+End e_rec.
+
+#[export] Instance e_eq_dec : EqDecision e.
+Proof.
+  unfold EqDecision, Decision.
+  induction x using e_ott_rec with
+    (P_list_e := fun e_list => forall e_list', {e_list = e_list'} + {e_list <> e_list'});
+    intros; try (destruct y; auto).
+  - is_eq t0 t5; auto.
+    right.
+    inv 1.
+  - is_eq x5 x0; auto.
+    right.
+    inv 1.
+  - is_eq fc5 fc0; auto.
+    + destruct (IHx l); subst; auto.
+      right; inv 1.
+    + right; inv 1.
+  - destruct e_list'; auto.
+  - destruct e_list'; auto.
+    destruct (IHx e); subst.
+    + destruct (IHx0 e_list'); subst; auto.
+      right; inv 1.
+    + right; inv 1.
+Defined.
+#[export] Hint Resolve e_eq_dec : ott_coq_equality.
+
+#[export] Instance rhs_eq_dec : EqDecision rhs.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+  - apply e_eq_dec.
+  - apply list_eq_dec; apply e_eq_dec.
+Qed.
+#[export] Hint Resolve rhs_eq_dec : ott_coq_equality.
+
+#[export] Instance stmt_eq_dec : EqDecision stmt.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+  - apply rhs_eq_dec.
+  - apply e_eq_dec.
+  - apply e_eq_dec.
+  - apply e_eq_dec.
+Qed.
