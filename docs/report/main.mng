@@ -86,7 +86,7 @@ In this section, we define the semantics of ABS.
 In this section, we define the metatheory of ABS.
 
 \begin{definition}
-A context $[[G']]$ subsumes a context $[[G]]$, written $[[G]] \subseteq [[G']]$, if (1) whenever $[[G(x) = T]]$ then $[[G'(x) = T]]$ and (2) whenever $[[G(fn) = sig]]$ then $[[G'(fn) = sig]]$.
+A context $[[G']]$ subsumes a context $[[G]]$, written $[[G]] \subseteq [[G']]$, if (1) whenever $[[G(x) = T]]$ then $[[G'(x) = T]]$ and (2) whenever $[[G(fc) = sig]]$ then $[[G'(fc) = sig]]$.
 \end{definition}
 
 \begin{definition}

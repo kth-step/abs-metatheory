@@ -1,146 +1,12 @@
 From stdpp Require Import prelude strings fin_maps natmap gmap gmultiset.
-From ABS Require Import abs_defs utils abs_functional_metatheory.
+From ABS Require Import list_util abs_defs abs_util abs_functional_metatheory.
+
+(** * ABS Imperative Metatheory *)
 
 (* Imperative semantics based on FASE-20 paper – not generated from Ott, but probably should be *)
 
-Tactic Notation "simp" := simplify_map_eq.
-Tactic Notation "is_eq" ident(a) ident(b) :=
-  destruct (decide (a = b)) as [<- | ?].
-
-Inductive rhs : Set :=
-| rhs_e (e0:e)
-(* we invoke on an object directly, not by some mysterious evaluation to object identifiers *)
-| rhs_invoc (o0:o) (m0:m) (es:list e)
-| rhs_get (f0:f).
-
-Inductive stmt : Set :=
-| stmt_seq (s1 s2: stmt)
-| stmt_skip
-| stmt_asgn (x0:x) (r:rhs)
-| stmt_cond (e0:e) (s1 s2: stmt)
-| stmt_loop (e0:e) (s: stmt)
-| stmt_ret (e0:e).
-
-Variant M : Set :=  (*r method definition *)
- | M_m (T_5:T) (m0:m) (params decl:list (T*x)) (body:stmt).
-
-(* Class definition *)
-Variant CL: Set :=
-  | class (name:C) (_: list(T*x)) (_: list M).
-
 Equations get_class_name (CL0:CL): C := {get_class_name (class name _ _) := name}.
 Equations get_fields (CL0:CL): list (T*x) := {get_fields (class _ fields _) := fields}.
-
-Variant P: Set :=
-  | program (_: list CL) (decl : list (T*x)) (main: stmt).
-
-Lemma cons_neq{X:Type}: forall (x:X) l, x :: l <> l.
-Proof.
-  induction l; auto.
-  intro.
-  inversion H; subst.
-  now apply IHl.
-Qed.
-
-#[global] Instance t_eq_dec : EqDecision t.
-Proof.
-  unfold EqDecision, Decision.
-  decide equality; auto with ott_coq_equality arith.
-Qed.
-Hint Resolve t_eq_dec : ott_coq_equality.
-
-Section e_rect_set.
-  Variables
-    (P_e : e -> Set)
-    (P_list_e : list e -> Set).
-
-  Hypothesis
-    (H_e_t : forall (t5:t), P_e (e_t t5))
-    (H_e_var : forall (x5:x), P_e (e_var x5))
-    (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fc5:fc), P_e (e_fn_call fc5 e_list))
-    (H_list_e_nil : P_list_e nil)
-    (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
-
-  Fixpoint e_ott_ind (n:e) : P_e n :=
-    match n as x return P_e x with
-    | (e_t t5) => H_e_t t5
-    | (e_var x5) => H_e_var x5
-    | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_ind (e_l:list e) : P_list_e e_l := match e_l as x return P_list_e x with nil => H_list_e_nil | cons e1 xl => H_list_e_cons e1(e_ott_ind e1)xl (e_list_ott_ind xl) end)) e_list) fn5
-    end.
-End e_rect_set.
-
-#[global] Instance e_eq_dec : EqDecision e.
-Proof.
-  unfold EqDecision, Decision.
-  induction x using e_ott_ind with
-    (P_list_e := fun e_list => forall e_list', {e_list = e_list'} + {e_list <> e_list'});
-    intros; try (destruct y; auto).
-  - is_eq t0 t5; auto.
-    right.
-    inv 1.
-  - is_eq x5 x0; auto.
-    right.
-    inv 1.
-  - is_eq fc5 fc0; auto.
-    + destruct (IHx l); subst; auto.
-      right; inv 1.
-    + right; inv 1.
-  - destruct e_list'; auto.
-  - destruct e_list'; auto.
-    destruct (IHx e); subst.
-    + destruct (IHx0 e_list'); subst; auto.
-      right; inv 1.
-    + right; inv 1.
-Qed.
-Hint Resolve e_eq_dec : ott_coq_equality.
-
-#[global] Instance rhs_eq_dec : EqDecision rhs.
-Proof.
-  unfold EqDecision, Decision.
-  decide equality; auto with ott_coq_equality arith.
-  - apply e_eq_dec.
-  - apply list_eq_dec; apply e_eq_dec.
-Qed.
-Hint Resolve rhs_eq_dec : ott_coq_equality.
-
-#[global] Instance stmt_eq_dec : EqDecision stmt.
-Proof.
-  unfold EqDecision, Decision.
-  decide equality; auto with ott_coq_equality arith.
-  - apply rhs_eq_dec.
-  - apply e_eq_dec.
-  - apply e_eq_dec.
-  - apply e_eq_dec.
-Qed.
-
-#[global]
-Instance proc_eq_dec : EqDecision (stmt * s).
-Proof.
-  unfold EqDecision, Decision.
-  apply prod_eq_dec.
-Qed.
-
-Variant task: Type := tsk (p:stmt) (l:s).
-
-#[global]
-Instance s_eq_dec: EqDecision s.
-Proof.
-  apply gmap_eq_dec.
-  apply t_eq_dec.
-Qed.
-#[global]
-Instance task_eq_dec: EqDecision task.
-Proof.
-  unfold EqDecision, Decision.
-  decide equality; auto with ott_coq_equality arith.
-  - apply s_eq_dec.
-  - apply stmt_eq_dec.
-Qed.
-
-#[global]
-  Instance countable_task: Countable task.
-(* is there some automation for this? *)
-Admitted.
 
 Notation queue := (gmultiset task).
 
@@ -164,6 +30,7 @@ Equations bind_params_aux (s0:s) (vs: list t) (params: list (T*x)): s := {
   bind_params_aux s0 _ [] := s0;
   bind_params_aux s0 (v::vs) ((_,x)::Txs) := insert x v (bind_params_aux s0 vs Txs)
   }.
+
 Definition bind_params := bind_params_aux empty.
 
 Equations bind (m0:m) (vs: list t) (f0:f) (CL0:CL) : option task := {

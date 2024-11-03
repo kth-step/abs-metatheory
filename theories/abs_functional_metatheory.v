@@ -1,5 +1,5 @@
 From stdpp Require Import prelude gmap.
-From ABS Require Import abs_defs utils.
+From ABS Require Import abs_defs list_util abs_util.
 From Equations Require Import Equations.
 
 (** * ABS Functional Metatheory *)
@@ -548,7 +548,7 @@ Proof.
   - (* RED_FUN_GROUND *)
     intros.
     set (fn_def:=(F_fn T_5 fc5 (map (fun '(T_, x_, _, _) => (T_, x_)) T_x_t_y_list) e5)).
-    pose proof utils.in_split F_list F'_list fn_def .
+    pose proof list_util.in_split F_list F'_list fn_def.
     rewrite app_nil_r in *.
     pose proof Forall_forall (typ_F G5) (F_list ++ [fn_def] ++ F'_list) as (? & _).
     pose proof H2 F_well_typed fn_def H1 as fn_typed.
