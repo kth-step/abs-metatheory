@@ -6,10 +6,7 @@ From Equations Require Import Equations.
 
 Section FunctionalMetatheory.
 
-Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fc), x_ <> fn_).
-Hypothesis (vars_well_typed: forall (x_:x) (G0: G) T0,
-             lookup x_ G0 = Some T0 ->
-             exists T_, T0 = ctxv_T T_).
+Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fn), x_ <> fn_).
 
 Lemma subG_add: forall (G0 G1: G) y T_,
   G0 ⊆ G1 ->
@@ -27,21 +24,27 @@ Proof.
   now apply insert_mono.
 Qed.
 
+Definition get_type (ctx: ctxv) : T :=
+  match ctx with
+    | ctxv_T T' => T'
+    | ctxv_fut T' => T'
+    | ctxv_sig (sig_sig _ T') => T'
+  end.
 (* this is stricter than the ABS paper *)
 (* we require that any variables in the typing context also exist in the state *)
 Definition G_vdash_s (G5 : G) (s5 : s) :=
- forall (x5 : x) (T5 : T),
-  lookup x5 G5 = Some (ctxv_T T5) ->
+ forall (x5 : x) (T5 : ctxv),
+  lookup x5 G5 = Some T5 ->
   exists t5,
-  lookup x5 s5 = Some t5 /\ typ_e G5 (e_t t5) T5.
+  lookup x5 s5 = Some t5 /\ typ_e G5 (e_t t5) (get_type T5).
 
 Notation "G1 G⊢ s1" := (G_vdash_s G1 s1) (at level 5).
 
 Lemma fresh_subG: forall G0 s0 (sub_list: list (T*x*t*x)),
-  G_vdash_s G0 s0 ->
+  G0 G⊢ s0 ->
   fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->
-  base.NoDup (map (fun '(_,_,_,y)=>y) sub_list) ->
-  subseteq G0 (foldr (fun '(T_,_,_,y_) G0 => insert y_ (ctxv_T T_) G0) G0 sub_list).
+  NoDup (map (fun '(_,_,_,y)=>y) sub_list) ->
+  G0 ⊆ (foldr (fun '(T_,_,_,y_) G0 => insert y_ (ctxv_T T_) G0) G0 sub_list).
 Proof.
   intros.
   induction sub_list.
@@ -57,7 +60,6 @@ Proof.
     intro.
     apply elem_of_dom in H3.
     inv H3.
-    destruct (vars_well_typed _ _ _ H6); subst.
     apply H1.
     pose proof H _ _ H6 as (t, (?, ?)).
     apply elem_of_dom; auto.
@@ -84,13 +86,13 @@ Proof.
     destruct (eq_x y y0); subst.
   - exists t_.
     split; eauto with simpl_map.
-    assert (T_ = T_0).
+    assert (T_ = get_type T_0).
     {
       setoid_rewrite lookup_insert in H1.
       now inv H1.
     }
 
-    assert ((T_0, t_) ∈ (map (fun '(T_, _, t_, _) => (T_, t_)) ((T_, x_, t_, y0) :: sub_list))).
+    assert ((get_type T_0, t_) ∈ (map (fun '(T_, _, t_, _) => (T_, t_)) ((T_, x_, t_, y0) :: sub_list))).
     {
       rewrite <- H2.
       simpl.
@@ -141,6 +143,39 @@ Proof.
     + intros.
       apply H1; auto.
     + eapply lookup_weaken; eauto.
+Qed.
+
+Lemma subG_foldr: forall (Γ1 Γ2: G) l,
+    Γ1 ⊆ Γ2 ->
+    foldr (fun xT Γ => <[xT.1:=ctxv_T xT.2]> Γ) Γ1 l
+      ⊆ foldr (fun xT Γ => <[xT.1:=ctxv_T xT.2]> Γ) Γ2 l.
+Proof.
+  induction l as [ | (?x_&?T_) ]; intros; simpl; auto.
+  apply insert_mono.
+  now apply IHl.
+Qed.
+
+Lemma subG_typ_F: forall G1 G2 e0,
+  subseteq G1 G2 -> typ_F G1 e0 -> typ_F G2 e0.
+Proof.
+  intros.
+  inv H0.
+  constructor; auto.
+  + eapply lookup_weaken; eauto.
+  + eapply subG_type; [| apply H2].
+    now apply subG_foldr.
+Qed.
+
+Lemma subG_typ_F_forall: forall G0 G_ Flist,
+    G0 ⊆ G_ ->
+    Forall (typ_F G0) Flist ->
+    Forall (typ_F G_) Flist.
+Proof.
+  intros.
+  apply Forall_forall.
+  intros*.
+  eapply subG_typ_F; eauto.
+  apply (Forall_forall (typ_F G0) Flist); auto.
 Qed.
 
 Lemma same_type_sub: forall (sub_list: list (x*x)) G0 e0 T0,
@@ -422,7 +457,7 @@ Proof.
     now apply (subst_lemma_one _ _ _ _ _ _ IH H10).
 Qed.
 
-Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
+Lemma type_preservation_step : forall (Flist : list F) (G5 : G) (s5 : s),
   G_vdash_s G5 s5 ->
   Forall (typ_F G5) Flist ->
   forall (e5 : e) (T5 : T) (s' : s) (e' : e),
@@ -439,7 +474,7 @@ Proof.
     exists G5; splits.
     1,2: easy.
     inv e0_type.
-    destruct (s_well_typed x5 T0 H2) as (?, (?, ?)).
+    destruct (s_well_typed x5 (ctxv_T T0) H2) as (?, (?, ?)).
     rewrite H in H0.
     inv H0.
     assumption.
@@ -593,4 +628,32 @@ Proof.
         apply H10.
 Qed.
 
+Definition reduce (Fs: list F): relation (e * s) :=
+  fun  x y => let (e0, s0) := x in let (e1, s1) := y in red_e Fs s0 e0 s1 e1.
+
+Definition local_well_typed (G0: G) (T_:T): (e * s) -> Prop :=
+  fun '(e, s) => exists G_, G0 ⊆ G_ /\ G_vdash_s G_ s /\ typ_e G_ e T_.
+
+Lemma type_preservation : forall (Flist : list F) (G5 : G) (s5 : s),
+  G_vdash_s G5 s5 ->
+  Forall (typ_F G5) Flist ->
+  forall (e5 : e) (T5 : T) σ,
+    typ_e G5 e5 T5 ->
+    (rtc (reduce Flist)) (e5, s5) σ ->
+    local_well_typed G5 T5 σ.
+Proof.
+  intros*.
+  (* induction using rtc_ind_r does not recognize the branches of an induction scheme *)
+  eapply rtc_ind_r with (x:=(e5, s5)); eauto.
+  - exists G5.
+    splits; auto.
+  - intros (?e_&?s_) (?e_&?s_) COMP STEP (?G_ & ?SUB & ? & ?TYP).
+    epose proof type_preservation_step _ _ _ H3 _ _ _ _ _ TYP STEP as (?G_ & ? & ? & ?TYP_STEP).
+    exists G_0.
+    splits; auto.
+    transitivity G_; auto.
+
+    Unshelve.
+    now eapply (subG_typ_F_forall G5).
+Qed.
 End FunctionalMetatheory.
