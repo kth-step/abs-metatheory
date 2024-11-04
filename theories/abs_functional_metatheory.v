@@ -6,7 +6,7 @@ From Equations Require Import Equations.
 
 Section FunctionalMetatheory.
 
-Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fn), x_ <> fn_).
+Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fc), x_ <> fn_).
 
 Lemma subG_add: forall (G0 G1: G) y T_,
   G0 ⊆ G1 ->
