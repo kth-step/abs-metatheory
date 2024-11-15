@@ -1,4 +1,4 @@
-From stdpp Require Import prelude fin_maps countable.
+From stdpp Require Import prelude fin_maps countable gmap.
 From ABS Require Import abs_defs list_util.
 From Equations Require Import Equations.
 
@@ -370,3 +370,144 @@ Defined.
 #[export] Instance countable_task: Countable task.
 (* is there some automation for this? *)
 Admitted.
+
+(* this substitution and subsequent well-typing is not currently used *)
+(* I thought I might use it, and then didn't, but may be useful later? *)
+Equations e_subst_s : s -> e -> e := {
+    e_subst_s _ (e_t t) := e_t t;
+    e_subst_s σ (e_var x_) := match σ !! x_ with | Some t => (e_t t) | None => (e_var x_) end ;
+    e_subst_s σ (e_fn_call fn_ es) := e_fn_call fn_ (e_subst_list_s σ es) }
+where e_subst_list_s: s -> list e -> list e := {
+    e_subst_list_s _ [] := [] ;
+    e_subst_list_s σ (e_::es) := e_subst_s σ e_ :: e_subst_list_s σ es
+  }.
+
+(* the well-typedness from the paper, ours is a little stricter *)
+Definition sub_well_typed (Γ : G) (σ : s) :=
+  forall (x_: x) (T_: T),
+    x_ ∈ dom σ ->
+    Γ !! x_ = Some (ctxv_T T_) ->
+    typ_e Γ (e_subst_s σ (e_var x_)) T_.
+
+(* just like our vdash, this is the opposite way from other well-typing relations *)
+Lemma subG_sub_wt: forall Γ1 Γ2 σ,
+    Γ1 ⊆ Γ2 -> sub_well_typed Γ2 σ -> sub_well_typed Γ1 σ.
+Proof.
+  intros*.
+  specialize (H0 x_ T_ H1).
+  autorewrite with e_subst_s in *.
+  apply elem_of_dom in H1.
+  inv H1.
+  setoid_rewrite H3.
+  eapply map_subseteq_spec in H; eauto.
+  apply H0 in H.
+  setoid_rewrite H3 in H.
+  inv H; constructor.
+Qed.
+
+(** Operations for typing and some lemmas about them *)
+Equations typ_es: G -> list e -> list T -> Prop := {
+    typ_es _ [] [] := True ;
+    typ_es Γ (e::es) (T::Ts) := typ_e Γ e T /\ typ_es Γ es Ts ;
+    typ_es _ _ _ := False
+  }.
+
+Definition add_G (Γ:G) (Tx:T*x): G := <[Tx.2:=ctxv_T Tx.1]> Γ.
+Definition extend_G (Γ:G) (l:list (T*x)): G := foldr (flip add_G) Γ l.
+
+Lemma subG_add: forall (G0 G1: G) y T_,
+  G0 ⊆ G1 ->
+  G0 !! y = None ->
+  G0 ⊆ (insert y T_ G1).
+Proof. intros; by apply insert_subseteq_r. Qed.
+
+Lemma subG_add_2: forall (G0 G1: G) y T_,
+  subseteq G0 G1 ->
+  G0 !! y = Some T_ ->
+  subseteq G0 (insert y T_ G1).
+Proof.
+  intros.
+  replace G0 with (<[y:=T_]> G0) by now apply insert_id.
+  now apply insert_mono.
+Qed.
+
+Lemma extend_subG: forall Γ1 Γ2 l,
+    Γ1 ⊆ Γ2 -> extend_G Γ1 l ⊆ extend_G Γ2 l.
+Proof.
+  induction l; intros; auto.
+  destruct a; simpl.
+  apply insert_mono.
+  now apply IHl.
+Qed.
+
+Lemma subG_extend: forall Γ l,
+    Forall (fun '(_, x) => x ∉ dom Γ) l ->
+    Γ ⊆ extend_G Γ l.
+Proof.
+  induction l; intros; auto.
+  destruct a; simpl in *.
+  inv H.
+  eapply subG_add; auto.
+  simpl.
+  now apply not_elem_of_dom.
+Qed.
+
+Lemma addG_subG: forall Γ1 Γ2 Tx,
+    add_G Γ1 Tx ⊆ Γ2 ->
+    Tx.2 ∉ dom Γ1 ->
+    Γ1 ⊆ Γ2.
+Proof.
+  unfold add_G.
+  intros.
+  epose proof map_subseteq_spec _ _ as (? & _).
+  pose proof H as H'.
+  eapply H1 with (i:=Tx.2) in H; last eapply lookup_insert.
+  eapply subG_add_2 in H; eauto.
+  transitivity (<[Tx.2:=ctxv_T Tx.1]> Γ1); auto.
+  apply subG_add; auto.
+  now apply not_elem_of_dom.
+Qed.
+
+Lemma extend_domain: forall Γ x l,
+    x ∉ dom Γ ->
+    Forall (λ '(_, x0), x0 <> x) l ->
+    x ∉ dom (extend_G Γ l).
+Proof.
+  induction l; intros; auto.
+  destruct a; simpl in *.
+  inv H0.
+  pose proof IHl H H4.
+  apply not_elem_of_dom.
+  setoid_rewrite lookup_insert_ne; auto.
+  now apply not_elem_of_dom.
+Qed.
+
+Lemma extend_subG_2: forall Γ1 Γ2 l,
+    extend_G Γ1 l ⊆ Γ2 ->
+    Forall (λ '(_, x), x ∉ dom Γ2) l ->
+    Γ1 ⊆ Γ2.
+Proof.
+  induction l; intros; auto.
+  destruct a; simpl in *.
+  inv H0.
+  apply addG_subG in H; auto.
+  apply extend_domain; auto.
+  - eapply lookup_weaken with (i:=x) in H; last apply lookup_insert.
+    apply not_elem_of_dom in H3.
+    setoid_rewrite H3 in H.
+    inv H.
+  - apply Forall_forall.
+    intros (?&?) ? ?.
+    eapply Forall_forall in H4; eauto.
+    simpl in *; subst.
+    eapply lookup_weaken with (i:=x) in H; last apply lookup_insert.
+    apply not_elem_of_dom in H3.
+    setoid_rewrite H3 in H.
+    inv H.
+Qed.
+
+(* Tactics for subject reduction proof(s)*)
+Ltac lookup_cases H i j :=
+  is_eq i j; [setoid_rewrite lookup_insert in H; inv H
+              | setoid_rewrite lookup_insert_ne in H; auto].
+

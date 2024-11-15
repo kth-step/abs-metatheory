@@ -8,22 +8,6 @@ Section FunctionalMetatheory.
 
 Hypothesis (vars_fs_distinct: forall (x_:x) (fn_:fc), x_ <> fn_).
 
-Lemma subG_add: forall (G0 G1: G) y T_,
-  G0 ⊆ G1 ->
-  G0 !! y = None ->
-  G0 ⊆ (insert y T_ G1).
-Proof. intros; by apply insert_subseteq_r. Qed.
-
-Lemma subG_add_2: forall (G0 G1: G) y T_,
-  subseteq G0 G1 ->
-  G0 !! y = Some T_ ->
-  subseteq G0 (insert y T_ G1).
-Proof.
-  intros.
-  replace G0 with (<[y:=T_]> G0) by now apply insert_id.
-  now apply insert_mono.
-Qed.
-
 Definition get_type (ctx: ctxv) : T :=
   match ctx with
     | ctxv_T T' => T'
