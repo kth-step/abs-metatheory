@@ -6,5 +6,6 @@ theories/abs_defs.v
 theories/abs_examples.v
 theories/abs_functional_metatheory.v
 theories/abs_imp.v
+theories/abs_imperative_metatheory.v
 theories/abs_util.v
 theories/list_util.v

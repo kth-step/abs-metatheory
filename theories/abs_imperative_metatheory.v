@@ -399,7 +399,7 @@ Theorem type_preservation : forall (Γ: G),
     Forall (CL_well_typed Γ) Cs ->
     forall σ σ',
       config_well_typed Γ σ ->
-      stmt_step Cs Fs id_of σ σ' ->
+      @stmt_step Fs σ σ' ->
       exists Γ', Γ ⊆ Γ' /\ config_well_typed Γ' σ'.
 Proof.
   intros Γ TYP_Fs TYP_Cs σ σ' WT STEP.
@@ -505,22 +505,22 @@ Proof.
     + eapply Conf_wt; eauto.
 
   - pose proof WT as Conf_wt.
-    specialize (WT _ _ H2).
+    specialize (WT _ _ H3).
     unfold_typing.
-    pose proof H16 as Method_wt.
-    inv H16.
+    pose proof H17 as Method_wt.
+    inv H17.
     destruct method.
     autorewrite with get_type get_params in *.
-    epose proof type_preservation_eval_list _ _ _ _ _ _ _ H13 H1 as TYP_ARGS.
+    epose proof type_preservation_eval_list _ _ _ _ _ _ _ H14 H2 as TYP_ARGS.
     exists (<[f:=ctxv_fut T_5]> Γ).
     split.
     + apply subG_add; auto.
       apply not_elem_of_dom.
       eapply fresh_config_wt; eauto.
     + intros*.
-      lookup_cases H4 oi i0.
+      lookup_cases H5 oi i0.
       * econstructor; eauto.
-        -- eapply subG_queue_wt; last apply H10.
+        -- eapply subG_queue_wt; last apply H11.
             eapply extend_subG.
             apply subG_add; auto.
             apply not_elem_of_dom_1.
@@ -537,24 +537,25 @@ Proof.
                       apply CL_wt_add_f.
                       eapply Forall_forall; eauto.
                       eapply get_class_decl_some; eauto.
-            ++ eapply subG_stmt_wt; last apply H9.
+            ++ eapply subG_stmt_wt; last apply H10.
               eapply extend_subG.
               apply subG_add; auto.
               apply not_elem_of_dom_1.
               eapply fresh_config_wt; eauto.
         -- admit. (* should follow from freshness *)
 
-      * lookup_cases H4 i i0.
+      * lookup_cases H5 i i0.
         -- econstructor; eauto.
             ++ apply lookup_insert.
             ++ eapply typ_term_list_invariant; eauto.
         -- set (fi:=id_of f).
-            is_eq fi i0; subst fi.
-            ++ setoid_rewrite lookup_insert in H4.
-              inv H4.
+           replace j with (id_of f) in * by admit. (* we need id_of to be consistent with j*)
+           is_eq fi i0; subst fi.
+           ++ setoid_rewrite lookup_insert in H5.
+              inv H5.
               econstructor.
               apply lookup_insert.
-            ++ setoid_rewrite lookup_insert_ne in H4; auto.
+            ++ setoid_rewrite lookup_insert_ne in H5; auto.
               eapply fresh_extend_wt; eauto.
 
   - pose proof WT _ _ H0 as fut_well_typed.
@@ -596,7 +597,7 @@ Proof.
     exists Γ; split; auto.
     intros*.
     unfold_typing.
-    + lookup_cases H2 oi i0.
+    + lookup_cases H1 oi i0.
       * repeat (econstructor; eauto).
         apply q_wt_add; auto.
         replace CL with Cl in * by admit. (* by welformedness of class_of, probably *)
@@ -606,18 +607,18 @@ Proof.
             apply CL_wt_fields_fresh.
             eapply Forall_forall; eauto.
             eapply get_class_decl_some; eauto.
-        -- eapply subG_typ_es; last apply H10.
+        -- eapply subG_typ_es; last apply H9.
             apply subG_extend.
             apply CL_wt_fields_fresh.
             eapply Forall_forall; eauto.
             eapply get_class_decl_some; eauto.
       * is_eq i i0.
         -- exfalso.
-            setoid_rewrite (lookup_delete σ i) in H2.
-            inv H2.
-        -- setoid_rewrite lookup_delete_ne in H2; auto.
+            setoid_rewrite (lookup_delete σ i) in H1.
+            inv H1.
+        -- setoid_rewrite lookup_delete_ne in H1; auto.
             eapply WT; eauto.
-    + lookup_cases H2 oi i0.
+    + lookup_cases H1 oi i0.
       * repeat (econstructor; eauto).
         apply q_wt_add; auto.
         replace CL with Cl in * by admit. (* by welformedness of class_of, probably *)
@@ -627,7 +628,7 @@ Proof.
             apply CL_wt_fields_fresh.
             eapply Forall_forall; eauto.
             eapply get_class_decl_some; eauto.
-        -- eapply subG_typ_es; last apply H10.
+        -- eapply subG_typ_es; last apply H9.
             apply subG_extend.
             apply CL_wt_fields_fresh.
             eapply Forall_forall; eauto.
@@ -635,9 +636,9 @@ Proof.
 
       * is_eq i i0.
         -- exfalso.
-            setoid_rewrite (lookup_delete σ i) in H2.
-            inv H2.
-        -- setoid_rewrite lookup_delete_ne in H2; auto.
+            setoid_rewrite (lookup_delete σ i) in H1.
+            inv H1.
+        -- setoid_rewrite lookup_delete_ne in H1; auto.
             eapply WT; eauto.
 
             Unshelve.
