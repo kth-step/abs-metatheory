@@ -45,7 +45,7 @@ Section Semantics.
   Equations get_class_decl (c:C) (l: list CL) : option CL := {
       get_class_decl _ [] := None ;
       get_class_decl c ((class name fields methods)::Cs) :=
-        if String.eqb c name then Some (class name fields methods) else get_class_decl c Cs
+        if decide (c = name) then Some (class name fields methods) else get_class_decl c Cs
     }.
 
   Lemma get_class_decl_some: forall c l C,
