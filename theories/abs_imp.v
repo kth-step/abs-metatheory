@@ -14,13 +14,6 @@ Equations get_methods (CL0:CL): list M := {get_methods (class _ _ methods) := me
 Equations get_params (_:M): list (T*x) := {get_params (M_m _ _ params _ _ ) := params}.
 Equations get_type (_:M): T := {get_type (M_m type _ _ _ _ ) := type}.
 
-Definition queue := (gmultiset task).
-
-Inductive cn: Type :=
-| cn_future (f0:f) (v:option t)
-| cn_object (C0:C) (a:s) (p:option task) (q: queue)
-| cn_invoc (o0:o) (f0:f) (m0:m) (vs: list t).
-
 Variant is_fut: cn -> Prop := is_fut_intro: forall f v, is_fut (cn_future f v).
 
 Definition config := (natmap cn).

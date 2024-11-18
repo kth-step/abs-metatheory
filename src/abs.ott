@@ -1,7 +1,7 @@
 embed
 {{ coq
 From Equations Require Import Equations.
-From stdpp Require Import prelude strings gmap.
+From stdpp Require Import prelude strings gmap gmultiset.
 
 #[export] Hint Resolve bool_dec : ott_coq_equality.
 #[export] Hint Resolve Ascii.ascii_dec : ott_coq_equality.
@@ -136,6 +136,13 @@ P :: '' ::=
   {{ com program }}
 | CL1 ... CLn { T1 x1 ; ... ; Ti xi ; stmt } :: :: program
 
+to :: to_ ::=
+{{ coq (option t) }}
+| _|_ :: M :: none
+  {{ coq None }}
+| t :: M :: some
+  {{ coq (Some [[t]]) }}
+
 sig :: sig_ ::=
      | T1 , ... , Tn -> T :: :: sig
 
@@ -243,7 +250,119 @@ Definition fresh_vars (l : list x) (e0: e) (s0: s) : Prop :=
   fresh_vars_s l s0 /\ fresh_vars_e l e0.
 
 Definition well_formed (e0: e) (s0: s) (l:list x) : Prop := fresh_vars l e0 s0 /\ NoDup l.
+
+#[export] Instance t_eq_dec : EqDecision t.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+Defined.
+#[export] Hint Resolve t_eq_dec : ott_coq_equality.
+
+Section e_rec.
+  Variables
+    (P_e : e -> Set)
+    (P_list_e : list e -> Set).
+
+  Hypothesis
+    (H_e_t : forall (t5:t), P_e (e_t t5))
+    (H_e_var : forall (x5:x), P_e (e_var x5))
+    (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fc5:fc), P_e (e_fn_call fc5 e_list))
+    (H_list_e_nil : P_list_e nil)
+    (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
+
+  Fixpoint e_ott_rec (n:e) : P_e n :=
+    match n as x return P_e x with
+    | (e_t t5) => H_e_t t5
+    | (e_var x5) => H_e_var x5
+    | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_rec (e_l:list e) : P_list_e e_l :=
+      match e_l as x return P_list_e x with
+        nil => H_list_e_nil
+      | cons e1 xl => H_list_e_cons e1(e_ott_rec e1)xl (e_list_ott_rec xl) end)) e_list) fn5
+    end.
+End e_rec.
+
+#[export] Instance e_eq_dec : EqDecision e.
+Proof.
+  unfold EqDecision, Decision.
+  induction x0 using e_ott_rec with
+    (P_list_e := fun e_list => forall e_list', {e_list = e_list'} + {e_list <> e_list'});
+    intros; try (destruct y; auto).
+  - destruct (decide (t5 = t0)) as [H_t|H_t].
+    + by left; rewrite H_t.
+    + by right; inv 1.
+  - destruct (decide (x5 = x0)) as [H_x|H_x].
+    + by left; rewrite H_x.
+    + by right; inv 1.
+  - destruct (decide (fc5 = fc0)) as [H_f|H_f].
+    + rewrite H_f; destruct (IHx0 l); subst; auto.
+      by right; intro Hl; inversion Hl.
+    + by right; inv 1.
+  - destruct e_list'; auto.
+  - destruct e_list'; auto.
+    destruct (IHx0 e0); subst.
+    + destruct (IHx1 e_list'); subst; auto.
+      by right; inv 1.
+    + by right; inv 1.
+Defined.
+#[export] Hint Resolve e_eq_dec : ott_coq_equality.
+
+#[export] Instance rhs_eq_dec : EqDecision rhs.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+  - apply e_eq_dec.
+  - apply list_eq_dec; apply e_eq_dec.
+Qed.
+#[export] Hint Resolve rhs_eq_dec : ott_coq_equality.
+
+#[export] Instance stmt_eq_dec : EqDecision stmt.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+  - apply rhs_eq_dec.
+  - apply e_eq_dec.
+  - apply e_eq_dec.
+  - apply e_eq_dec.
+Qed.
+#[export] Hint Resolve stmt_eq_dec : ott_coq_equality.
+
+#[export] Instance task_eq_dec: EqDecision task.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+  - by destruct (decide (s5 = s0)); [left|right].
+  - apply stmt_eq_dec.
+Defined.
+#[export] Hint Resolve task_eq_dec : ott_coq_equality.
+
+#[export] Instance countable_task: Countable task.
+(* is there some automation for this? *)
+Admitted.
 }}
+
+grammar
+queue :: queue_ ::=
+ {{ com queue }}
+ {{ coq (gmultiset task) }}
+| queue + task :: M :: add
+  {{ coq ([[queue]] ⊎ {[+ [[task]] +]}) }}
+| queue - task :: M :: remove
+  {{ coq ([[queue]] \ {[+ [[task]] +]}) }}
+
+tasko :: '' ::=
+ {{ coq (option task) }}
+ {{ coq-universe Type }}
+| _|_ :: M :: none
+  {{ coq None }}
+| task :: M :: some
+  {{ coq (Some [[t]]) }}
+
+cn :: cn_ ::=
+  {{ com configuration }}
+  {{ coq-universe Type }}
+| future ( f , to ) :: :: future
+| object ( C , s , tasko , queue ) :: :: object
+| invoc ( o , f , m , t1 .. tn ) :: :: invoc
 
 defns
   expression_well_typing :: typ_ ::=

@@ -7,7 +7,7 @@ Require Import Ott.ott_list_core.
 
 
 From Equations Require Import Equations.
-From stdpp Require Import prelude strings gmap.
+From stdpp Require Import prelude strings gmap gmultiset.
 
 #[export] Hint Resolve bool_dec : ott_coq_equality.
 #[export] Hint Resolve Ascii.ascii_dec : ott_coq_equality.
@@ -64,21 +64,18 @@ Proof.
 Defined.
 Hint Resolve eq_C : ott_coq_equality.
 
-Definition b : Set := bool.
-
 Definition z : Set := Z.
 
-Inductive T : Set :=  (*r ground type *)
- | T_bool : T
- | T_int : T.
+Definition b : Set := bool.
 
 Inductive t : Set :=  (*r ground term *)
  | t_b (b5:b) (*r boolean *)
  | t_int (z5:z) (*r integer *)
  | t_fut (fut5:fut) (*r future *).
 
-Inductive sig : Set := 
- | sig_sig (_:list T) (T_5:T).
+Inductive T : Set :=  (*r ground type *)
+ | T_bool : T
+ | T_int : T.
 
 Inductive e : Set :=  (*r expression *)
  | e_t (t5:t) (*r term *)
@@ -91,22 +88,18 @@ Inductive e : Set :=  (*r expression *)
  | e_eq (e1:e) (e2:e)
  | e_lt (e1:e) (e2:e).
 
-Inductive ctxv : Set := 
- | ctxv_T (T5:T)
- | ctxv_sig (sig5:sig)
- | ctxv_fut (T5:T).
+Inductive sig : Set := 
+ | sig_sig (_:list T) (T_5:T).
 
 Inductive rhs : Set :=  (*r right-hand side in assignment *)
  | rhs_e (e5:e)
  | rhs_invoc (o5:o) (m5:m) (_:list e) (*r we invoke on an object directly, not by some mysterious evaluation to object identifiers *)
  | rhs_get (f5:f).
 
-Definition s : Type := gmap x t.
-
-Inductive F : Set :=  (*r function definition *)
- | F_fn (T_5:T) (fc5:fc) (_:list (T*x)) (e5:e).
-
-Definition G : Type := gmap x ctxv.
+Inductive ctxv : Set := 
+ | ctxv_T (T5:T)
+ | ctxv_sig (sig5:sig)
+ | ctxv_fut (T5:T).
 
 Inductive stmt : Set :=  (*r statement *)
  | stmt_seq (stmt1:stmt) (stmt2:stmt)
@@ -116,17 +109,26 @@ Inductive stmt : Set :=  (*r statement *)
  | stmt_loop (e5:e) (stmt5:stmt)
  | stmt_ret (e5:e).
 
+Inductive F : Set :=  (*r function definition *)
+ | F_fn (T_5:T) (fc5:fc) (_:list (T*x)) (e5:e).
+
+Definition s : Type := gmap x t.
+
+Definition G : Type := gmap x ctxv.
+
 Inductive M : Set :=  (*r method definition *)
  | M_m (T_5:T) (m5:m) (_:list (T*x)) (_:list (T*x)) (stmt5:stmt).
 
 Inductive CL : Set :=  (*r class definition *)
  | class (C5:C) (_:list (T*x)) (_:list M).
 
-Inductive task : Type := 
- | tsk (stmt5:stmt) (s5:s).
+Definition to : Set := (option t).
 
 Inductive P : Set :=  (*r program *)
  | program (_:list CL) (_:list (T*x)) (stmt5:stmt).
+
+Inductive task : Type := 
+ | tsk (stmt5:stmt) (s5:s).
 (** induction principles *)
 Section e_rect.
 
@@ -209,6 +211,103 @@ Definition fresh_vars (l : list x) (e0: e) (s0: s) : Prop :=
 
 Definition well_formed (e0: e) (s0: s) (l:list x) : Prop := fresh_vars l e0 s0 /\ NoDup l.
 
+#[export] Instance t_eq_dec : EqDecision t.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+Defined.
+#[export] Hint Resolve t_eq_dec : ott_coq_equality.
+
+Section e_rec.
+  Variables
+    (P_e : e -> Set)
+    (P_list_e : list e -> Set).
+
+  Hypothesis
+    (H_e_t : forall (t5:t), P_e (e_t t5))
+    (H_e_var : forall (x5:x), P_e (e_var x5))
+    (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fc5:fc), P_e (e_fn_call fc5 e_list))
+    (H_list_e_nil : P_list_e nil)
+    (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
+
+  Fixpoint e_ott_rec (n:e) : P_e n :=
+    match n as x return P_e x with
+    | (e_t t5) => H_e_t t5
+    | (e_var x5) => H_e_var x5
+    | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_rec (e_l:list e) : P_list_e e_l :=
+      match e_l as x return P_list_e x with
+        nil => H_list_e_nil
+      | cons e1 xl => H_list_e_cons e1(e_ott_rec e1)xl (e_list_ott_rec xl) end)) e_list) fn5
+    end.
+End e_rec.
+
+#[export] Instance e_eq_dec : EqDecision e.
+Proof.
+  unfold EqDecision, Decision.
+  induction x0 using e_ott_rec with
+    (P_list_e := fun e_list => forall e_list', {e_list = e_list'} + {e_list <> e_list'});
+    intros; try (destruct y; auto).
+  - destruct (decide (t5 = t0)) as [H_t|H_t].
+    + by left; rewrite H_t.
+    + by right; inv 1.
+  - destruct (decide (x5 = x0)) as [H_x|H_x].
+    + by left; rewrite H_x.
+    + by right; inv 1.
+  - destruct (decide (fc5 = fc0)) as [H_f|H_f].
+    + rewrite H_f; destruct (IHx0 l); subst; auto.
+      by right; intro Hl; inversion Hl.
+    + by right; inv 1.
+  - destruct e_list'; auto.
+  - destruct e_list'; auto.
+    destruct (IHx0 e0); subst.
+    + destruct (IHx1 e_list'); subst; auto.
+      by right; inv 1.
+    + by right; inv 1.
+Defined.
+#[export] Hint Resolve e_eq_dec : ott_coq_equality.
+
+#[export] Instance rhs_eq_dec : EqDecision rhs.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+  - apply e_eq_dec.
+  - apply list_eq_dec; apply e_eq_dec.
+Qed.
+#[export] Hint Resolve rhs_eq_dec : ott_coq_equality.
+
+#[export] Instance stmt_eq_dec : EqDecision stmt.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+  - apply rhs_eq_dec.
+  - apply e_eq_dec.
+  - apply e_eq_dec.
+  - apply e_eq_dec.
+Qed.
+#[export] Hint Resolve stmt_eq_dec : ott_coq_equality.
+
+#[export] Instance task_eq_dec: EqDecision task.
+Proof.
+  unfold EqDecision, Decision.
+  decide equality; auto with ott_coq_equality.
+  - by destruct (decide (s5 = s0)); [left|right].
+  - apply stmt_eq_dec.
+Defined.
+#[export] Hint Resolve task_eq_dec : ott_coq_equality.
+
+#[export] Instance countable_task: Countable task.
+(* is there some automation for this? *)
+Admitted.
+
+
+Definition queue : Set := (gmultiset task).
+
+Definition tasko : Type := (option task).
+
+Inductive cn : Type :=  (*r configuration *)
+ | cn_future (f5:f) (to5:to)
+ | cn_object (C5:C) (s5:s) (tasko5:tasko) (queue5:queue)
+ | cn_invoc (o5:o) (f5:f) (m5:m) (_:list t).
 (** definitions *)
 
 (* defns expression_well_typing *)
