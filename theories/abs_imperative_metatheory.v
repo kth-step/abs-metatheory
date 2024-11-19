@@ -199,7 +199,6 @@ Definition config_well_typed (G0:G) (conf: config) :=
 Lemma fresh_config_wt: forall Γ f σ,
     fresh f σ -> config_well_typed Γ σ -> f ∉ dom Γ.
 Proof.
-  unfold fresh, config_well_typed.
   intros.
   destruct (σ !! id_of f) eqn:?.
   - specialize (id_of_well_typed _ _ _ Heqo) as FUT_WT; auto.
@@ -311,6 +310,27 @@ Proof.
   eapply subG_task_wt; eauto.
 Qed.
 
+Lemma subG_cn_wt: forall Γ1 Γ2 cn,
+    Γ1 ⊆ Γ2 -> cn_well_typed  Γ1 cn -> cn_well_typed  Γ2 cn.
+Proof.
+  intros.
+  destruct cn; inv H0.
+  - econstructor.
+    eapply lookup_weaken; eauto.
+  - econstructor.
+    + eapply lookup_weaken; eauto.
+    + eapply typ_term_invariant; eauto.
+  - econstructor; eauto.
+    + eapply subG_queue_wt; last apply H8.
+      now apply extend_subG.
+    + eapply subG_task_wt; last apply H9.
+      now apply extend_subG.
+    + admit. (* this is the ⊢ problem again *)
+  - econstructor; eauto.
+    + eapply lookup_weaken; eauto.
+    + eapply subG_typ_es; eauto.
+Admitted.
+
 Lemma fresh_extend_wt: forall Γ σ f,
     config_well_typed Γ σ ->
     fresh f σ ->
@@ -351,16 +371,6 @@ Proof.
       (* for invocations it is less obvious *)
 Admitted.
 
-Lemma bind_wt: forall m Ts T CL vs f tsk,
-    match_method m Ts T CL ->
-    bind m vs f CL = tsk ->
-    forall Γ,
-      Γ !! f = Some (ctxv_fut T) ->
-      typ_es Γ (map e_t vs) Ts ->
-      task_well_typed Γ tsk.
-Proof.
-Admitted.
-
 Lemma insert_lookup_ne_extend: forall Γ i j T_ l,
     i <> j ->
     extend_G (<[j:=T_]> Γ) l !! i = extend_G Γ l !! i.
@@ -373,7 +383,34 @@ Proof.
     + setoid_rewrite lookup_insert_ne; eauto.
 Qed.
 
-Definition CL_well_typed: G -> CL -> Prop := fun _ _ => True. (*TODO: implement*)
+Equations CL_well_typed: G -> CL -> Prop := {
+    (*TODO: implement, probably via a typ_M *)
+    CL_well_typed _ _ := True
+  }.
+
+(* in the apper, this is an assumptiom *)
+(* should be reasonable from well typed classes and methods *)
+Lemma bind_wt: forall m Ts T CL vs f tsk,
+    match_method m Ts T CL ->
+    bind m vs f CL = tsk ->
+    forall Γ,
+      Γ !! f = Some (ctxv_fut T) ->
+      typ_es Γ (map e_t vs) Ts ->
+      CL_well_typed Γ CL ->
+      task_well_typed Γ tsk.
+Proof.
+  intros.
+  destruct tsk; last constructor.
+  destruct t, CL.
+  inv H.
+  destruct method.
+  autorewrite with bind get_methods get_type in *.
+  destruct (get_method_decl m l0); inv H0.
+  autorewrite with get_params in *.
+  econstructor.
+  (* here we SHOULD have to prove Γ ⊢ (bind_params vs l1) *)
+
+Admitted.
 
 Lemma CL_wt_fields_fresh: forall Γ C,
     CL_well_typed Γ C ->
