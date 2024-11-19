@@ -33,12 +33,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_x : ott_coq_equality.
-Definition b : Set := bool. (*r boolean *)
-Lemma eq_b: forall (x y : b), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_b : ott_coq_equality.
 Definition fut : Set := nat. (*r future type *)
 Lemma eq_fut: forall (x y : fut), {x = y} + {x <> y}.
 Proof.
@@ -69,6 +63,8 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_C : ott_coq_equality.
+
+Definition b : Set := bool.
 
 Definition z : Set := Z.
 
@@ -270,7 +266,7 @@ Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
       (  (Z.sub Z.zero  z5 )   =  z' )  ->
      red_e F_list s5 (e_neg (e_t (t_int z5))) s5 (e_t (t_int z'))
  | red_not : forall (F_list:list F) (s5:s) (b5 b':b),
-      ((not  b5  =  b' ))  ->
+      (  (not  b5 )   =  b' )  ->
      red_e F_list s5 (e_not (e_t (t_b b5))) s5 (e_t (t_b b'))
  | red_add : forall (F_list:list F) (s5:s) (z1 z2 z_5:z),
       (  (Z.add  z1   z2 )   =  z_5 )  ->
@@ -279,10 +275,10 @@ Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
       (  (Z.mul  z1   z2 )   =  z_5 )  ->
      red_e F_list s5 (e_mul (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_int z_5))
  | red_eq : forall (F_list:list F) (s5:s) (z1 z2:z) (b5:b),
-      ((Z.eqb  z1   z2 ) =  b5 )  ->
+      (  (Z.eqb  z1   z2 )   =  b5 )  ->
      red_e F_list s5 (e_eq (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_b b5))
  | red_lt : forall (F_list:list F) (s5:s) (z1 z2:z) (b5:b),
-      ((Z.lt  z1   z2 ) =  b5 )  ->
+      (  (Z.lt  z1   z2 )   =  b5 )  ->
      red_e F_list s5 (e_lt (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_b b5))
  | red_neg' : forall (F_list:list F) (s5:s) (e5:e) (s':s) (e':e),
      red_e F_list s5 e5 s' e' ->
