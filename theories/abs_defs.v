@@ -39,12 +39,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_b : ott_coq_equality.
-Definition z : Set := Z. (*r integer *)
-Lemma eq_z: forall (x y : z), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_z : ott_coq_equality.
 Definition fut : Set := nat. (*r future type *)
 Lemma eq_fut: forall (x y : fut), {x = y} + {x <> y}.
 Proof.
@@ -75,6 +69,8 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_C : ott_coq_equality.
+
+Definition z : Set := Z.
 
 Inductive T : Set :=  (*r ground type *)
  | T_bool : T
@@ -169,6 +165,11 @@ Fixpoint e_ott_ind (n:e) : P_e n :=
 end.
 
 End e_rect.
+Lemma eq_z: forall (x y : z), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_z : ott_coq_equality.
 
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
@@ -266,16 +267,16 @@ Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
       (lookup  x5   s5  = Some ( t5 ))  ->
      red_e F_list s5 (e_var x5) s5 (e_t t5)
  | red_neg : forall (F_list:list F) (s5:s) (z5 z':z),
-      ((Z.sub Z.zero  z5  =  z' ))  ->
+      (  (Z.sub Z.zero  z5 )   =  z' )  ->
      red_e F_list s5 (e_neg (e_t (t_int z5))) s5 (e_t (t_int z'))
  | red_not : forall (F_list:list F) (s5:s) (b5 b':b),
       ((not  b5  =  b' ))  ->
      red_e F_list s5 (e_not (e_t (t_b b5))) s5 (e_t (t_b b'))
  | red_add : forall (F_list:list F) (s5:s) (z1 z2 z_5:z),
-      ((Z.add  z1   z2  =  z_5 ))  ->
+      (  (Z.add  z1   z2 )   =  z_5 )  ->
      red_e F_list s5 (e_add (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_int z_5))
  | red_mul : forall (F_list:list F) (s5:s) (z1 z2 z_5:z),
-      ((Z.mul  z1   z2  =  z_5 ))  ->
+      (  (Z.mul  z1   z2 )   =  z_5 )  ->
      red_e F_list s5 (e_mul (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_int z_5))
  | red_eq : forall (F_list:list F) (s5:s) (z1 z2:z) (b5:b),
       ((Z.eqb  z1   z2 ) =  b5 )  ->

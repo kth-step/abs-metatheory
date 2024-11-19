@@ -29,11 +29,6 @@ metavar b ::=
   {{ com boolean }}
   {{ coq-equality }}
   {{ coq bool }}
-metavar z ::=
-  {{ lex numeral }}
-  {{ com integer }}
-  {{ coq-equality }}
-  {{ coq Z }}
 metavar fut ::=
   {{ lex numeral }}
   {{ com future type }}
@@ -60,6 +55,16 @@ metavar C ::=
   {{ coq-equality }}
   {{ coq string }}
 grammar
+z :: z_ ::=
+  {{ coq-equality }}
+  {{ coq Z }}
+| z (+) z' :: M :: plus
+  {{ coq (Z.add [[z]] [[z']]) }}
+| z (*) z' :: M :: times
+  {{ coq (Z.mul [[z]] [[z']]) }}
+| (-) z :: M :: neg
+  {{ coq (Z.sub Z.zero [[z]]) }}
+
 T :: T_ ::=
    {{ com ground type }}
   | Bool :: :: bool 
@@ -168,14 +173,10 @@ formula :: formula_ ::=
   | s ( x ) = t :: M :: s_eq_t
     {{ coq (lookup [[x]] [[s]] = Some ([[t]])) }}
     {{ com I would prefer all the arithmetic do be done directly in the conclusion, but this is how I could make it work with Ott }}
-  | (-) z = z' :: M :: neg_t
-    {{ coq ((Z.sub Z.zero [[z]] = [[z']])) }}
+  | z = z' :: M :: eq_z
+    {{ coq ([[z]] = [[z']]) }}
   | (!) b = b' :: M :: not_t
     {{ coq ((not [[b]] = [[b']])) }}
-  | z1 (+) z2 = z :: M :: add_t
-    {{ coq ((Z.add [[z1]] [[z2]] = [[z]])) }}
-  | z1 (*) z2 = z :: M :: mul_t
-    {{ coq ((Z.mul [[z1]] [[z2]] = [[z]])) }}
   | z1 (==) z2 = b :: M :: eq_t
     {{ coq ((Z.eqb [[z1]] [[z2]]) = [[b]]) }}
   | z1 (<) z2 = b :: M :: lt_t
@@ -197,6 +198,11 @@ formula :: formula_ ::=
 
 embed
 {{ coq
+Lemma eq_z: forall (x y : z), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_z : ott_coq_equality.
 
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
