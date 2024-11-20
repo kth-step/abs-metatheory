@@ -226,6 +226,12 @@ Section e_rec.
   Hypothesis
     (H_e_t : forall (t5:t), P_e (e_t t5))
     (H_e_var : forall (x5:x), P_e (e_var x5))
+    (H_e_neg : forall (e5:e), P_e e5 -> P_e (e_neg e5))
+    (H_e_not : forall (e5:e), P_e e5 -> P_e (e_not e5))
+    (H_e_add : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_add e1 e2))
+    (H_e_mul : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_mul e1 e2))
+    (H_e_eq : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_eq e1 e2))
+    (H_e_lt : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_lt e1 e2))
     (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fc5:fc), P_e (e_fn_call fc5 e_list))
     (H_list_e_nil : P_list_e nil)
     (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
@@ -234,10 +240,18 @@ Section e_rec.
     match n as x return P_e x with
     | (e_t t5) => H_e_t t5
     | (e_var x5) => H_e_var x5
-    | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_rec (e_l:list e) : P_list_e e_l :=
-      match e_l as x return P_list_e x with
-        nil => H_list_e_nil
-      | cons e1 xl => H_list_e_cons e1(e_ott_rec e1)xl (e_list_ott_rec xl) end)) e_list) fn5
+    | (e_neg e5) => H_e_neg e5 (e_ott_rec e5)
+    | (e_not e5) => H_e_not e5 (e_ott_rec e5)
+    | (e_add e1 e2) => H_e_add e1 (e_ott_rec e1) e2 (e_ott_rec e2)
+    | (e_mul e1 e2) => H_e_mul e1 (e_ott_rec e1) e2 (e_ott_rec e2)
+    | (e_eq e1 e2) => H_e_eq e1 (e_ott_rec e1) e2 (e_ott_rec e2)
+    | (e_lt e1 e2) => H_e_lt e1 (e_ott_rec e1) e2 (e_ott_rec e2)
+    | (e_fn_call fn5 e_list) => H_e_fn_call e_list
+      (((fix e_list_ott_rec (e_l:list e) : P_list_e e_l :=
+         match e_l as x return P_list_e x with
+	 | nil => H_list_e_nil
+         | cons e1 xl => H_list_e_cons e1(e_ott_rec e1)xl (e_list_ott_rec xl)
+         end)) e_list) fn5
     end.
 End e_rec.
 
@@ -253,14 +267,34 @@ Proof.
   - destruct (decide (x5 = x0)) as [H_x|H_x].
     + by left; rewrite H_x.
     + by right; inv 1.
+  - destruct (IHx0 y); subst; first by auto.
+    by right; inv 1.
+  - destruct (IHx0 y); subst; first by auto.
+    by right; inv 1.
+  - destruct (IHx0_1 y1), (IHx0_2 y2); subst; first by auto.
+    + by right; inv 1.
+    + by right; inv 1.
+    + by right; inv 1.
+  - destruct (IHx0_1 y1), (IHx0_2 y2); subst; first by auto.
+    + by right; inv 1.
+    + by right; inv 1.
+    + by right; inv 1.
+  - destruct (IHx0_1 y1), (IHx0_2 y2); subst; first by auto.
+    + by right; inv 1.
+    + by right; inv 1.
+    + by right; inv 1.
+  - destruct (IHx0_1 y1), (IHx0_2 y2); subst; first by auto.
+    + by right; inv 1.
+    + by right; inv 1.
+    + by right; inv 1.
   - destruct (decide (fc5 = fc0)) as [H_f|H_f].
     + rewrite H_f; destruct (IHx0 l); subst; auto.
       by right; intro Hl; inversion Hl.
     + by right; inv 1.
-  - destruct e_list'; auto.
-  - destruct e_list'; auto.
+  - by destruct e_list'; auto.
+  - destruct e_list'; first by auto.
     destruct (IHx0 e0); subst.
-    + destruct (IHx1 e_list'); subst; auto.
+    + destruct (IHx1 e_list'); subst; first by auto.
       by right; inv 1.
     + by right; inv 1.
 Defined.
