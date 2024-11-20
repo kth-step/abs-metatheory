@@ -66,11 +66,11 @@ b :: b_ ::=
   {{ coq-equality }}
   {{ coq bool }}
 | (!) b :: M :: not
-  {{ coq (not [[b]]) }}
+  {{ coq (negb [[b]]) }}
 | z (==) z' :: M :: eq_z
   {{ coq (Z.eqb [[z]] [[z']]) }}
 | z (<) z' :: M :: lt_z
-  {{ coq (Z.lt [[z]] [[z']]) }}
+  {{ coq (Z.ltb [[z]] [[z']]) }}
 
 T :: T_ ::=
    {{ com ground type }}
@@ -179,11 +179,6 @@ formula :: formula_ ::=
     {{ coq (lookup [[x]] [[G]] = Some (ctxv_T [[T]])) }}
   | s ( x ) = t :: M :: s_eq_t
     {{ coq (lookup [[x]] [[s]] = Some ([[t]])) }}
-    {{ com I would prefer all the arithmetic do be done directly in the conclusion, but this is how I could make it work with Ott }}
-  | z = z' :: M :: eq_z
-    {{ coq ([[z]] = [[z']]) }}
-  | b = b' :: M :: eq_b
-    {{ coq ([[b]] = [[b']]) }}
   | G ( fc ) = sig :: M :: G_fn_eq_sig
     {{ coq (lookup [[fc]] [[G]] = Some (ctxv_sig [[sig]])) }}
   | distinct ( x1 , ... , xn ) :: M :: distinct_vars
@@ -324,29 +319,23 @@ defn
   ---------------------------- :: var
   F1 ... Fn , s |- x ~> s |- t
 
-  (-) z = z'
   ---------------------------------------------------- :: neg
-  F1 ... Fn , s |- - z ~> s |- z'
+  F1 ... Fn , s |- - z ~> s |- (-) z
 
-  (!) b = b'
   ---------------------------------------------------- :: not
-  F1 ... Fn , s |- ! b ~> s |- b'
+  F1 ... Fn , s |- ! b ~> s |- (!) b
 
-  z1 (+) z2 = z
   ---------------------------------------------------- :: add
-  F1 ... Fn , s |- z1 + z2 ~> s |- z
+  F1 ... Fn , s |- z1 + z2 ~> s |- z1 (+) z2
 
-  z1 (*) z2 = z
   ---------------------------------------------------- :: mul
-  F1 ... Fn , s |- z1 * z2 ~> s |- z
+  F1 ... Fn , s |- z1 * z2 ~> s |- z1 (*) z2
 
-  z1 (==) z2 = b
   ---------------------------------------------------- :: eq
-  F1 ... Fn , s |- z1 == z2 ~> s |- b
+  F1 ... Fn , s |- z1 == z2 ~> s |- z1 (==) z2
 
-  z1 (<) z2 = b
   ---------------------------------------------------- :: lt
-  F1 ... Fn , s |- z1 < z2 ~> s |- b
+  F1 ... Fn , s |- z1 < z2 ~> s |- z1 (<) z2
 
   F1 ... Fn , s |- e ~> s' |- e'
   ------------------------------------------ :: neg'

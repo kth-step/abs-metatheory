@@ -262,24 +262,18 @@ Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
  | red_var : forall (F_list:list F) (s5:s) (x5:x) (t5:t),
       (lookup  x5   s5  = Some ( t5 ))  ->
      red_e F_list s5 (e_var x5) s5 (e_t t5)
- | red_neg : forall (F_list:list F) (s5:s) (z5 z':z),
-      (  (Z.sub Z.zero  z5 )   =  z' )  ->
-     red_e F_list s5 (e_neg (e_t (t_int z5))) s5 (e_t (t_int z'))
- | red_not : forall (F_list:list F) (s5:s) (b5 b':b),
-      (  (not  b5 )   =  b' )  ->
-     red_e F_list s5 (e_not (e_t (t_b b5))) s5 (e_t (t_b b'))
- | red_add : forall (F_list:list F) (s5:s) (z1 z2 z_5:z),
-      (  (Z.add  z1   z2 )   =  z_5 )  ->
-     red_e F_list s5 (e_add (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_int z_5))
- | red_mul : forall (F_list:list F) (s5:s) (z1 z2 z_5:z),
-      (  (Z.mul  z1   z2 )   =  z_5 )  ->
-     red_e F_list s5 (e_mul (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_int z_5))
- | red_eq : forall (F_list:list F) (s5:s) (z1 z2:z) (b5:b),
-      (  (Z.eqb  z1   z2 )   =  b5 )  ->
-     red_e F_list s5 (e_eq (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_b b5))
- | red_lt : forall (F_list:list F) (s5:s) (z1 z2:z) (b5:b),
-      (  (Z.lt  z1   z2 )   =  b5 )  ->
-     red_e F_list s5 (e_lt (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_b b5))
+ | red_neg : forall (F_list:list F) (s5:s) (z5:z),
+     red_e F_list s5 (e_neg (e_t (t_int z5))) s5 (e_t (t_int  (Z.sub Z.zero  z5 ) ))
+ | red_not : forall (F_list:list F) (s5:s) (b5:b),
+     red_e F_list s5 (e_not (e_t (t_b b5))) s5 (e_t (t_b  (negb  b5 ) ))
+ | red_add : forall (F_list:list F) (s5:s) (z1 z2:z),
+     red_e F_list s5 (e_add (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_int  (Z.add  z1   z2 ) ))
+ | red_mul : forall (F_list:list F) (s5:s) (z1 z2:z),
+     red_e F_list s5 (e_mul (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_int  (Z.mul  z1   z2 ) ))
+ | red_eq : forall (F_list:list F) (s5:s) (z1 z2:z),
+     red_e F_list s5 (e_eq (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_b  (Z.eqb  z1   z2 ) ))
+ | red_lt : forall (F_list:list F) (s5:s) (z1 z2:z),
+     red_e F_list s5 (e_lt (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_b  (Z.ltb  z1   z2 ) ))
  | red_neg' : forall (F_list:list F) (s5:s) (e5:e) (s':s) (e':e),
      red_e F_list s5 e5 s' e' ->
      red_e F_list s5 (e_neg e5) s' (e_neg e')
