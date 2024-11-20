@@ -24,16 +24,6 @@ metavar x, y ::=
       {{ coq string }}
       {{ coq-equality }}
       {{ com variable }}
-metavar b ::=
-  {{ lex alphanum }}
-  {{ com boolean }}
-  {{ coq-equality }}
-  {{ coq bool }}
-metavar z ::=
-  {{ lex numeral }}
-  {{ com integer }}
-  {{ coq-equality }}
-  {{ coq Z }}
 metavar fut ::=
   {{ lex numeral }}
   {{ com future type }}
@@ -60,6 +50,28 @@ metavar C ::=
   {{ coq-equality }}
   {{ coq string }}
 grammar
+z :: z_ ::=
+  {{ com integer }}
+  {{ coq-equality }}
+  {{ coq Z }}
+| z (+) z' :: M :: plus
+  {{ coq (Z.add [[z]] [[z']]) }}
+| z (*) z' :: M :: times
+  {{ coq (Z.mul [[z]] [[z']]) }}
+| (-) z :: M :: neg
+  {{ coq (Z.sub Z.zero [[z]]) }}
+
+b :: b_ ::=
+  {{ com boolean }}
+  {{ coq-equality }}
+  {{ coq bool }}
+| (!) b :: M :: not
+  {{ coq (negb [[b]]) }}
+| z (==) z' :: M :: eq_z
+  {{ coq (Z.eqb [[z]] [[z']]) }}
+| z (<) z' :: M :: lt_z
+  {{ coq (Z.ltb [[z]] [[z']]) }}
+
 T :: T_ ::=
    {{ com ground type }}
   | Bool :: :: bool 
@@ -86,6 +98,13 @@ e :: e_ ::=
     {{ com variable }}
   | fc ( e1 , ... , en ) :: :: fn_call
     {{ com function call }}
+  {{ com arithmetic (and boolean) expressions }}
+  | - e :: :: neg
+  | ! e :: :: not
+  | e1 + e2 :: :: add
+  | e1 * e2 :: :: mul
+  | e1 == e2 :: :: eq
+  | e1 < e2 :: :: lt
   | e [ x1 |-> y1 , ... , xn |-> yn ] :: M :: subst_var
     {{ coq (e_var_subst [[e]] [[x1 |-> y1 ... xn |-> yn]]) }}
 
@@ -177,10 +196,21 @@ formula :: formula_ ::=
 
 embed
 {{ coq
+Lemma eq_z: forall (x y : z), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_z : ott_coq_equality.
 
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
  e_var_subst_one (e_var x0) x_ y_ := if (eq_x x0 x_) then (e_var y_) else (e_var x0);
+ e_var_subst_one (e_neg e0) _ _ := e_neg (e_var_subst_one e0 x_ y_);
+ e_var_subst_one (e_not e0) _ _ := e_not (e_var_subst_one e0 x_ y_);
+ e_var_subst_one (e_add e1 e2) _ _ := e_add (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
+ e_var_subst_one (e_mul e1 e2) _ _ := e_mul (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
+ e_var_subst_one (e_eq e1 e2) _ _ := e_eq (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
+ e_var_subst_one (e_lt e1 e2) _ _ := e_lt (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
  e_var_subst_one (e_fn_call fn0 arg_list) x_ y_ := e_fn_call fn0 (e_list_subst_one arg_list x_ y_) }
 where e_list_subst_one (es:list e) (x_ y_: x) : list e := {
  e_list_subst_one nil _ _ := nil;
@@ -192,6 +222,12 @@ Definition e_var_subst (e5:e) (l:list (x*x)) : e := foldr (fun '(x', y') e' => e
 Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
  fresh_vars_e _ (e_t _) := True;
  fresh_vars_e l (e_var x) := ~ In x l;
+ fresh_vars_e l (e_neg e0) := fresh_vars_e l e0;
+ fresh_vars_e l (e_not e0) := fresh_vars_e l e0;
+ fresh_vars_e l (e_add e1 e2) := fresh_vars_e l e1 /\ fresh_vars_e l e2;
+ fresh_vars_e l (e_mul e1 e2) := fresh_vars_e l e1 /\ fresh_vars_e l e2;
+ fresh_vars_e l (e_eq e1 e2) := fresh_vars_e l e1 /\ fresh_vars_e l e2;
+ fresh_vars_e l (e_lt e1 e2) := fresh_vars_e l e1 /\ fresh_vars_e l e2;
  fresh_vars_e l (e_fn_call fn el) := fresh_vars_el l el }
 where fresh_vars_el (l : list x) (el0 : list e) : Prop := {
  fresh_vars_el l nil := True;
@@ -226,6 +262,34 @@ defn
   ----------- :: var
   G |- x : T
 
+  G |- e : Int
+  ------------ :: neg
+  G |- - e : Int
+
+  G |- e : Bool
+  ------------ :: not
+  G |- ! e : Bool
+
+  G |- e1 : Int
+  G |- e2 : Int
+  ------------ :: add
+  G |- e1 + e2 : Int
+
+  G |- e1 : Int
+  G |- e2 : Int
+  ------------ :: mul
+  G |- e1 * e2 : Int
+
+  G |- e1 : Int
+  G |- e2 : Int
+  ------------ :: eq
+  G |- e1 == e2 : Bool
+
+  G |- e1 : Int
+  G |- e2 : Int
+  ------------ :: lt
+  G |- e1 < e2 : Bool
+
   G |- e1 : T1 ... G |- en : Tn
   G ( fc ) = T1 , ... , Tn -> T
   ----------------------------- :: func_expr
@@ -254,6 +318,64 @@ defn
   s ( x ) = t
   ---------------------------- :: var
   F1 ... Fn , s |- x ~> s |- t
+
+  ---------------------------------------------------- :: neg
+  F1 ... Fn , s |- - z ~> s |- (-) z
+
+  ---------------------------------------------------- :: not
+  F1 ... Fn , s |- ! b ~> s |- (!) b
+
+  ---------------------------------------------------- :: add
+  F1 ... Fn , s |- z1 + z2 ~> s |- z1 (+) z2
+
+  ---------------------------------------------------- :: mul
+  F1 ... Fn , s |- z1 * z2 ~> s |- z1 (*) z2
+
+  ---------------------------------------------------- :: eq
+  F1 ... Fn , s |- z1 == z2 ~> s |- z1 (==) z2
+
+  ---------------------------------------------------- :: lt
+  F1 ... Fn , s |- z1 < z2 ~> s |- z1 (<) z2
+
+  F1 ... Fn , s |- e ~> s' |- e'
+  ------------------------------------------ :: neg'
+  F1 ... Fn , s |- - e ~> s' |- - e'
+
+  F1 ... Fn , s |- e ~> s' |- e'
+  ------------------------------------------ :: not'
+  F1 ... Fn , s |- ! e ~> s' |- ! e'
+
+  F1 ... Fn , s |- e1 ~> s' |- e'
+  ------------------------------------------ :: add_l
+  F1 ... Fn , s |- e1 + e2 ~> s' |- e' + e2
+
+  F1 ... Fn , s |- e2 ~> s' |- e'
+  ------------------------------------------ :: add_r
+  F1 ... Fn , s |- e1 + e2 ~> s' |- e1 + e'
+
+  F1 ... Fn , s |- e1 ~> s' |- e'
+  ------------------------------------------ :: mul_l
+  F1 ... Fn , s |- e1 * e2 ~> s' |- e' + e2
+
+  F1 ... Fn , s |- e2 ~> s' |- e'
+  ------------------------------------------ :: mul_r
+  F1 ... Fn , s |- e1 * e2 ~> s' |- e1 + e'
+
+  F1 ... Fn , s |- e1 ~> s' |- e'
+  ------------------------------------------ :: eq_l
+  F1 ... Fn , s |- e1 == e2 ~> s' |- e' == e2
+
+  F1 ... Fn , s |- e2 ~> s' |- e'
+  ------------------------------------------ :: eq_r
+  F1 ... Fn , s |- e1 == e2 ~> s' |- e1 == e'
+
+  F1 ... Fn , s |- e1 ~> s' |- e'
+  ------------------------------------------ :: lt_l
+  F1 ... Fn , s |- e1 < e2 ~> s' |- e' < e2
+
+  F1 ... Fn , s |- e2 ~> s' |- e'
+  ------------------------------------------ :: lt_r
+  F1 ... Fn , s |- e1 < e2 ~> s' |- e1 < e'
 
   F1 ... Fn , s |- e ~> s' |- e'
   ------------------------------------------------------------------------------------------------------------- :: fun_exp

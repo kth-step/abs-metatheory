@@ -80,6 +80,48 @@ Proof.
     now rewrite e_list_subst_map, map_map.
 Qed.
 
+Lemma subst_neg: forall e0 sub,
+    e_var_subst (e_neg e0) sub = e_neg (e_var_subst e0 sub).
+Proof.
+  induction sub as [ | (?&?) ]; intros; simpl; auto.
+  now rewrite IHsub.
+Qed.
+
+Lemma subst_not: forall e0 sub,
+    e_var_subst (e_not e0) sub = e_not (e_var_subst e0 sub).
+Proof.
+  induction sub as [ | (?&?) ]; intros; simpl; auto.
+  now rewrite IHsub.
+Qed.
+
+Lemma subst_add: forall e1 e2 sub,
+    e_var_subst (e_add e1 e2) sub = e_add (e_var_subst e1 sub) (e_var_subst e2 sub).
+Proof.
+  induction sub as [ | (?&?) ]; intros; simpl; auto.
+  now rewrite IHsub.
+Qed.
+
+Lemma subst_mul: forall e1 e2 sub,
+    e_var_subst (e_mul e1 e2) sub = e_mul (e_var_subst e1 sub) (e_var_subst e2 sub).
+Proof.
+  induction sub as [ | (?&?) ]; intros; simpl; auto.
+  now rewrite IHsub.
+Qed.
+
+Lemma subst_eq: forall e1 e2 sub,
+    e_var_subst (e_eq e1 e2) sub = e_eq (e_var_subst e1 sub) (e_var_subst e2 sub).
+Proof.
+  induction sub as [ | (?&?) ]; intros; simpl; auto.
+  now rewrite IHsub.
+Qed.
+
+Lemma subst_lt: forall e1 e2 sub,
+    e_var_subst (e_lt e1 e2) sub = e_lt (e_var_subst e1 sub) (e_var_subst e2 sub).
+Proof.
+  induction sub as [ | (?&?) ]; intros; simpl; auto.
+  now rewrite IHsub.
+Qed.
+
 Lemma e_list_subst: forall el x0 y0,
   e_list_subst_one el x0 y0 = map (fun e => e_var_subst_one e x0 y0) el.
 Proof.
@@ -112,15 +154,18 @@ Proof.
                         forall e0 y ys,
                         In e0 e_list ->
                         fresh_vars_e (y::ys) e0 -> fresh_vars_e [y] e0);
-     intros; try easy.
-  - simp fresh_vars_e in *.
-    intro.
+    intros; simp fresh_vars_e in *;
+    (* the binary operations *)
+    try (inv H; split;
+         [eapply IHe0_1; eauto | eapply IHe0_2; eauto]);
+    (* the other easy ones*)
+    try easy.
+  - intro.
     inv H0.
     + apply H.
     now left.
     + inv H1.
-  - simp fresh_vars_e in *.
-    induction e_list.
+  - induction e_list.
     + easy.
     + inv H.
       split.
@@ -142,14 +187,17 @@ Proof.
                         forall e0 y ys,
                         In e0 e_list ->
                         fresh_vars_e (y::ys) e0 -> fresh_vars_e ys e0);
-     intros; try easy.
-  - simp fresh_vars_e in *.
-    intro.
+    intros; simp fresh_vars_e in *;
+    (* the binary operations *)
+    try (inv H; split;
+         [eapply IHe0_1; eauto | eapply IHe0_2; eauto]);
+    (* the other easy ones*)
+    try easy.
+  - intro.
     apply H.
     right.
     assumption.
-  - simp fresh_vars_e in *.
-    induction e_list.
+  - induction e_list.
     + easy.
     + inv H.
       split.
@@ -221,6 +269,34 @@ Proof.
       eapply IHsub; auto.
   - rewrite subst_fn.
     simp fresh_vars_e in *.
+  - rewrite subst_neg.
+    simp fresh_vars_e in *.
+  - rewrite subst_not.
+    simp fresh_vars_e in *.
+  - rewrite subst_add.
+    simp fresh_vars_e in *.
+    destruct H0, H.
+    split.
+    + apply IHe0_1; auto.
+    + apply IHe0_2; auto.
+  - rewrite subst_mul.
+    simp fresh_vars_e in *.
+    destruct H0, H.
+    split.
+    + apply IHe0_1; auto.
+    + apply IHe0_2; auto.
+  - rewrite subst_eq.
+    simp fresh_vars_e in *.
+    destruct H0, H.
+    split.
+    + apply IHe0_1; auto.
+    + apply IHe0_2; auto.
+  - rewrite subst_lt.
+    simp fresh_vars_e in *.
+    destruct H0, H.
+    split.
+    + apply IHe0_1; auto.
+    + apply IHe0_2; auto.
   - destruct H,H0.
     split.
     + apply IHe0; auto.
@@ -303,6 +379,12 @@ Section e_rec.
   Hypothesis
     (H_e_t : forall (t5:t), P_e (e_t t5))
     (H_e_var : forall (x5:x), P_e (e_var x5))
+    (H_e_neg : forall (e5:e), P_e e5 -> P_e (e_neg e5))
+    (H_e_not : forall (e5:e), P_e e5 -> P_e (e_not e5))
+    (H_e_add : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_add e1 e2))
+    (H_e_mul : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_mul e1 e2))
+    (H_e_eq : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_eq e1 e2))
+    (H_e_lt : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_lt e1 e2))
     (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fc5:fc), P_e (e_fn_call fc5 e_list))
     (H_list_e_nil : P_list_e nil)
     (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
@@ -311,6 +393,12 @@ Section e_rec.
     match n as x return P_e x with
     | (e_t t5) => H_e_t t5
     | (e_var x5) => H_e_var x5
+    | (e_neg e5) => H_e_neg e5 (e_ott_rec e5)
+    | (e_not e5) => H_e_not e5 (e_ott_rec e5)
+    | (e_add e1 e2) => H_e_add e1 (e_ott_rec e1) e2 (e_ott_rec e2)
+    | (e_mul e1 e2) => H_e_mul e1 (e_ott_rec e1) e2 (e_ott_rec e2)
+    | (e_eq e1 e2) => H_e_eq e1 (e_ott_rec e1) e2 (e_ott_rec e2)
+    | (e_lt e1 e2) => H_e_lt e1 (e_ott_rec e1) e2 (e_ott_rec e2)
     | (e_fn_call fn5 e_list) => H_e_fn_call e_list (((fix e_list_ott_rec (e_l:list e) : P_list_e e_l := match e_l as x return P_list_e x with nil => H_list_e_nil | cons e1 xl => H_list_e_cons e1(e_ott_rec e1)xl (e_list_ott_rec xl) end)) e_list) fn5
     end.
 End e_rec.
@@ -327,6 +415,26 @@ Proof.
   - is_eq x5 x0; auto.
     right.
     inv 1.
+  - destruct (IHx y); subst; auto.
+    right; inv 1.
+  - destruct (IHx y); subst; auto.
+    right; inv 1.
+  - destruct (IHx1 y1), (IHx2 y2); subst; auto.
+    + right; inv 1.
+    + right; inv 1.
+    + right; inv 1.
+  - destruct (IHx1 y1), (IHx2 y2); subst; auto.
+    + right; inv 1.
+    + right; inv 1.
+    + right; inv 1.
+  - destruct (IHx1 y1), (IHx2 y2); subst; auto.
+    + right; inv 1.
+    + right; inv 1.
+    + right; inv 1.
+  - destruct (IHx1 y1), (IHx2 y2); subst; auto.
+    + right; inv 1.
+    + right; inv 1.
+    + right; inv 1.
   - is_eq fc5 fc0; auto.
     + destruct (IHx l); subst; auto.
       right; inv 1.
@@ -376,6 +484,12 @@ Admitted.
 Equations e_subst_s : s -> e -> e := {
     e_subst_s _ (e_t t) := e_t t;
     e_subst_s σ (e_var x_) := match σ !! x_ with | Some t => (e_t t) | None => (e_var x_) end ;
+    e_subst_s σ (e_neg e0) := e_neg (e_subst_s σ e0);
+    e_subst_s σ (e_not e0) := e_not (e_subst_s σ e0);
+    e_subst_s σ (e_add e1 e2) := e_add (e_subst_s σ e1) (e_subst_s σ e2);
+    e_subst_s σ (e_mul e1 e2) := e_mul (e_subst_s σ e1) (e_subst_s σ e2);
+    e_subst_s σ (e_eq e1 e2) := e_eq (e_subst_s σ e1) (e_subst_s σ e2);
+    e_subst_s σ (e_lt e1 e2) := e_lt (e_subst_s σ e1) (e_subst_s σ e2);
     e_subst_s σ (e_fn_call fn_ es) := e_fn_call fn_ (e_subst_list_s σ es) }
 where e_subst_list_s: s -> list e -> list e := {
     e_subst_list_s _ [] := [] ;

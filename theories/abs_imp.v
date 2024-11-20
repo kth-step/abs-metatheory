@@ -78,6 +78,9 @@ Equations eval_list (Fs: list F) (s0:s) (es: list e) (vs: list t): Prop := {
 Definition destiny: f := "destiny"%string.
 
 Definition fresh (f0:f) (σ:config) : Prop := forall i f v, σ !! i = Some (cn_future f v) -> f <> f0.
+(* should we also require no invocations that mention f?
+   alternatively we could assume (id_of f) is always present for invocations
+ *)
 
 Inductive stmt_step {Fs: list F}: config -> config -> Prop :=
 | step_activate: forall σ p q i a C,
