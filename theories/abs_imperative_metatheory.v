@@ -348,9 +348,9 @@ Proof.
     contradiction.
   - epose proof H i ob LUi.
     destruct ob.
-    + enough (diff : f <> f0).
+    + enough (diff : f <> f5).
       {
-        destruct v.
+        destruct to5.
         - inv H1.
           econstructor; auto.
           + setoid_rewrite lookup_insert_ne; eauto.
