@@ -118,9 +118,10 @@ Lemma subG_type: forall G1 G2 e0 T0,
   subseteq G1 G2 -> typ_e G1 e0 T0 -> typ_e G2 e0 T0.
 Proof.
   intros.
-  induction H0.
-  - constructor.
-  - constructor.
+  induction H0;
+    try (now constructor);
+    try (constructor; now apply IHtyp_e);
+    try (constructor; [now apply IHtyp_e1 | now apply IHtyp_e2]).
   - constructor.
     eapply lookup_weaken; eauto.
   - constructor.
@@ -225,12 +226,39 @@ Proof.
     + now replace (map (fun pat_ : e * T => let (_, T_) := pat_ in T_) (map (fun '(e, T) => (e_var_subst e sub_list, T)) e_T_list))
         with(map (fun pat_ : e * T => let (_, T_) := pat_ in T_) e_T_list)
       by (rewrite map_map; apply map_ext; now intros (?, ?)).
+  - rewrite subst_neg.
+    inv H1.
+    constructor.
+    now apply H.
+  - rewrite subst_not.
+    inv H1.
+    constructor.
+    now apply H.
+  - rewrite subst_add.
+    inv H2.
+    constructor.
+    + now apply H.
+    + now apply H1.
+  - rewrite subst_mul.
+    inv H2.
+    constructor.
+    + now apply H.
+    + now apply H1.
+  - rewrite subst_eq.
+    inv H2.
+    constructor.
+    + now apply H.
+    + now apply H1.
+  - rewrite subst_lt.
+    inv H2.
+    constructor.
+    + now apply H.
+    + now apply H1.
   - inv H.
   - inv H2.
     + now apply H.
     + now apply H1.
   }
-
 Qed.
 
 Lemma subst_lemma_one: forall G0 x0 y0 e0 Ai A,
@@ -306,6 +334,42 @@ Proof.
           by (rewrite map_map; apply map_ext; now intros (?, ?)).
         setoid_rewrite lookup_insert_ne in H7; auto.
         setoid_rewrite lookup_insert_ne; auto.
+    - simp e_var_subst_one.
+      inv H1.
+      constructor.
+      now apply H.
+    - simp e_var_subst_one.
+      inv H1.
+      constructor.
+      now apply H.
+    - simp e_var_subst_one.
+      simp fresh_vars_e in H1.
+      inv H2.
+      inv H1.
+      constructor.
+      + now apply H.
+      + now apply H0.
+    - simp e_var_subst_one.
+      simp fresh_vars_e in H1.
+      inv H2.
+      inv H1.
+      constructor.
+      + now apply H.
+      + now apply H0.
+    - simp e_var_subst_one.
+      simp fresh_vars_e in H1.
+      inv H2.
+      inv H1.
+      constructor.
+      + now apply H.
+      + now apply H0.
+    - simp e_var_subst_one.
+      simp fresh_vars_e in H1.
+      inv H2.
+      inv H1.
+      constructor.
+      + now apply H.
+      + now apply H0.
     - inv H.
     - destruct H1; subst.
       + apply H; eauto.
@@ -453,7 +517,8 @@ Proof.
   intros e0 T0 s' e' e0_type reduction.
   generalize dependent T0.
   generalize dependent G5.
-  induction reduction.
+  induction reduction;
+    try ((intros; exists G5; repeat split; auto; inv e0_type; constructor)).
   - intros.
     exists G5; splits.
     1,2: easy.
@@ -462,6 +527,84 @@ Proof.
     rewrite H in H0.
     inv H0.
     assumption.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H1 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    now constructor.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H1 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    now constructor.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H2 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    constructor; auto.
+    eapply subG_type; eauto.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H4 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    constructor; auto.
+    eapply subG_type; eauto.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H2 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    constructor; auto.
+    eapply subG_type; eauto.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H4 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    constructor; auto.
+    eapply subG_type; eauto.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H2 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    constructor; auto.
+    eapply subG_type; eauto.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H4 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    constructor; auto.
+    eapply subG_type; eauto.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H2 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    constructor; auto.
+    eapply subG_type; eauto.
+
+  - intros.
+    inv e0_type.
+    pose proof IHreduction _ s_well_typed F_well_typed _ H4 as (G' & ? & ? & ?).
+    exists G'.
+    repeat split; auto.
+    constructor; auto.
+    eapply subG_type; eauto.
 
   - (* RED_FUN_EXPR *)
     intros.

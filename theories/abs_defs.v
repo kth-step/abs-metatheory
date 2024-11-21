@@ -33,18 +33,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_x : ott_coq_equality.
-Definition b : Set := bool. (*r boolean *)
-Lemma eq_b: forall (x y : b), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_b : ott_coq_equality.
-Definition z : Set := Z. (*r integer *)
-Lemma eq_z: forall (x y : z), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_z : ott_coq_equality.
 Definition fut : Set := nat. (*r future type *)
 Lemma eq_fut: forall (x y : fut), {x = y} + {x <> y}.
 Proof.
@@ -76,6 +64,10 @@ Proof.
 Defined.
 Hint Resolve eq_C : ott_coq_equality.
 
+Definition b : Set := bool.
+
+Definition z : Set := Z.
+
 Inductive T : Set :=  (*r ground type *)
  | T_bool : T
  | T_int : T.
@@ -91,7 +83,13 @@ Inductive sig : Set :=
 Inductive e : Set :=  (*r expression *)
  | e_t (t5:t) (*r term *)
  | e_var (x5:x) (*r variable *)
- | e_fn_call (fc5:fc) (_:list e) (*r function call *).
+ | e_fn_call (fc5:fc) (_:list e) (*r function call *)
+ | e_neg (e5:e)
+ | e_not (e5:e)
+ | e_add (e1:e) (e2:e)
+ | e_mul (e1:e) (e2:e)
+ | e_eq (e1:e) (e2:e)
+ | e_lt (e1:e) (e2:e).
 
 Inductive ctxv : Set := 
  | ctxv_T (T5:T)
@@ -133,13 +131,19 @@ Inductive P : Set :=  (*r program *)
 Section e_rect.
 
 Variables
-  (P_e : e -> Prop)
-  (P_list_e : list e -> Prop).
+  (P_list_e : list e -> Prop)
+  (P_e : e -> Prop).
 
 Hypothesis
   (H_e_t : forall (t5:t), P_e (e_t t5))
   (H_e_var : forall (x5:x), P_e (e_var x5))
   (H_e_fn_call : forall (e_list:list e), P_list_e e_list -> forall (fc5:fc), P_e (e_fn_call fc5 e_list))
+  (H_e_neg : forall (e5:e), P_e e5 -> P_e (e_neg e5))
+  (H_e_not : forall (e5:e), P_e e5 -> P_e (e_not e5))
+  (H_e_add : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_add e1 e2))
+  (H_e_mul : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_mul e1 e2))
+  (H_e_eq : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_eq e1 e2))
+  (H_e_lt : forall (e1:e), P_e e1 -> forall (e2:e), P_e e2 -> P_e (e_lt e1 e2))
   (H_list_e_nil : P_list_e nil)
   (H_list_e_cons : forall (e0:e), P_e e0 -> forall (e_l:list e), P_list_e e_l -> P_list_e (cons e0 e_l)).
 
@@ -148,13 +152,30 @@ Fixpoint e_ott_ind (n:e) : P_e n :=
   | (e_t t5) => H_e_t t5
   | (e_var x5) => H_e_var x5
   | (e_fn_call fc5 e_list) => H_e_fn_call e_list (((fix e_list_ott_ind (e_l:list e) : P_list_e e_l := match e_l as x return P_list_e x with nil => H_list_e_nil | cons e1 xl => H_list_e_cons e1(e_ott_ind e1)xl (e_list_ott_ind xl) end)) e_list) fc5
+  | (e_neg e5) => H_e_neg e5 (e_ott_ind e5)
+  | (e_not e5) => H_e_not e5 (e_ott_ind e5)
+  | (e_add e1 e2) => H_e_add e1 (e_ott_ind e1) e2 (e_ott_ind e2)
+  | (e_mul e1 e2) => H_e_mul e1 (e_ott_ind e1) e2 (e_ott_ind e2)
+  | (e_eq e1 e2) => H_e_eq e1 (e_ott_ind e1) e2 (e_ott_ind e2)
+  | (e_lt e1 e2) => H_e_lt e1 (e_ott_ind e1) e2 (e_ott_ind e2)
 end.
 
 End e_rect.
+Lemma eq_z: forall (x y : z), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_z : ott_coq_equality.
 
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
  e_var_subst_one (e_var x0) x_ y_ := if (eq_x x0 x_) then (e_var y_) else (e_var x0);
+ e_var_subst_one (e_neg e0) _ _ := e_neg (e_var_subst_one e0 x_ y_);
+ e_var_subst_one (e_not e0) _ _ := e_not (e_var_subst_one e0 x_ y_);
+ e_var_subst_one (e_add e1 e2) _ _ := e_add (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
+ e_var_subst_one (e_mul e1 e2) _ _ := e_mul (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
+ e_var_subst_one (e_eq e1 e2) _ _ := e_eq (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
+ e_var_subst_one (e_lt e1 e2) _ _ := e_lt (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
  e_var_subst_one (e_fn_call fn0 arg_list) x_ y_ := e_fn_call fn0 (e_list_subst_one arg_list x_ y_) }
 where e_list_subst_one (es:list e) (x_ y_: x) : list e := {
  e_list_subst_one nil _ _ := nil;
@@ -166,6 +187,12 @@ Definition e_var_subst (e5:e) (l:list (x*x)) : e := foldr (fun '(x', y') e' => e
 Equations fresh_vars_e (l : list x) (e0 : e) : Prop := {
  fresh_vars_e _ (e_t _) := True;
  fresh_vars_e l (e_var x) := ~ In x l;
+ fresh_vars_e l (e_neg e0) := fresh_vars_e l e0;
+ fresh_vars_e l (e_not e0) := fresh_vars_e l e0;
+ fresh_vars_e l (e_add e1 e2) := fresh_vars_e l e1 /\ fresh_vars_e l e2;
+ fresh_vars_e l (e_mul e1 e2) := fresh_vars_e l e1 /\ fresh_vars_e l e2;
+ fresh_vars_e l (e_eq e1 e2) := fresh_vars_e l e1 /\ fresh_vars_e l e2;
+ fresh_vars_e l (e_lt e1 e2) := fresh_vars_e l e1 /\ fresh_vars_e l e2;
  fresh_vars_e l (e_fn_call fn el) := fresh_vars_el l el }
 where fresh_vars_el (l : list x) (el0 : list e) : Prop := {
  fresh_vars_el l nil := True;
@@ -193,6 +220,28 @@ Inductive typ_e : G -> e -> T -> Prop :=    (* defn e *)
  | typ_var : forall (G5:G) (x5:x) (T5:T),
       (lookup  x5   G5  = Some (ctxv_T  T5 ))  ->
      typ_e G5 (e_var x5) T5
+ | typ_neg : forall (G5:G) (e5:e),
+     typ_e G5 e5 T_int ->
+     typ_e G5 (e_neg e5) T_int
+ | typ_not : forall (G5:G) (e5:e),
+     typ_e G5 e5 T_bool ->
+     typ_e G5 (e_not e5) T_bool
+ | typ_add : forall (G5:G) (e1 e2:e),
+     typ_e G5 e1 T_int ->
+     typ_e G5 e2 T_int ->
+     typ_e G5 (e_add e1 e2) T_int
+ | typ_mul : forall (G5:G) (e1 e2:e),
+     typ_e G5 e1 T_int ->
+     typ_e G5 e2 T_int ->
+     typ_e G5 (e_mul e1 e2) T_int
+ | typ_eq : forall (G5:G) (e1 e2:e),
+     typ_e G5 e1 T_int ->
+     typ_e G5 e2 T_int ->
+     typ_e G5 (e_eq e1 e2) T_bool
+ | typ_lt : forall (G5:G) (e1 e2:e),
+     typ_e G5 e1 T_int ->
+     typ_e G5 e2 T_int ->
+     typ_e G5 (e_lt e1 e2) T_bool
  | typ_func_expr : forall (e_T_list:list (e*T)) (G5:G) (fc5:fc) (T_5:T),
      (forall e_ T_, In (e_,T_) (map (fun (pat_: (e*T)) => match pat_ with (e_,T_) => (e_,T_) end) e_T_list) -> (typ_e G5 e_ T_)) ->
       (lookup  fc5   G5  = Some (ctxv_sig  (sig_sig (map (fun (pat_:(e*T)) => match pat_ with (e_,T_) => T_ end ) e_T_list) T_5) ))  ->
@@ -213,6 +262,48 @@ Inductive red_e : list F -> s -> e -> s -> e -> Prop :=    (* defn e *)
  | red_var : forall (F_list:list F) (s5:s) (x5:x) (t5:t),
       (lookup  x5   s5  = Some ( t5 ))  ->
      red_e F_list s5 (e_var x5) s5 (e_t t5)
+ | red_neg : forall (F_list:list F) (s5:s) (z5:z),
+     red_e F_list s5 (e_neg (e_t (t_int z5))) s5 (e_t (t_int  (Z.sub Z.zero  z5 ) ))
+ | red_not : forall (F_list:list F) (s5:s) (b5:b),
+     red_e F_list s5 (e_not (e_t (t_b b5))) s5 (e_t (t_b  (negb  b5 ) ))
+ | red_add : forall (F_list:list F) (s5:s) (z1 z2:z),
+     red_e F_list s5 (e_add (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_int  (Z.add  z1   z2 ) ))
+ | red_mul : forall (F_list:list F) (s5:s) (z1 z2:z),
+     red_e F_list s5 (e_mul (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_int  (Z.mul  z1   z2 ) ))
+ | red_eq : forall (F_list:list F) (s5:s) (z1 z2:z),
+     red_e F_list s5 (e_eq (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_b  (Z.eqb  z1   z2 ) ))
+ | red_lt : forall (F_list:list F) (s5:s) (z1 z2:z),
+     red_e F_list s5 (e_lt (e_t (t_int z1)) (e_t (t_int z2))) s5 (e_t (t_b  (Z.ltb  z1   z2 ) ))
+ | red_neg' : forall (F_list:list F) (s5:s) (e5:e) (s':s) (e':e),
+     red_e F_list s5 e5 s' e' ->
+     red_e F_list s5 (e_neg e5) s' (e_neg e')
+ | red_not' : forall (F_list:list F) (s5:s) (e5:e) (s':s) (e':e),
+     red_e F_list s5 e5 s' e' ->
+     red_e F_list s5 (e_not e5) s' (e_not e')
+ | red_add_l : forall (F_list:list F) (s5:s) (e1 e2:e) (s':s) (e':e),
+     red_e F_list s5 e1 s' e' ->
+     red_e F_list s5 (e_add e1 e2) s' (e_add e' e2)
+ | red_add_r : forall (F_list:list F) (s5:s) (e1 e2:e) (s':s) (e':e),
+     red_e F_list s5 e2 s' e' ->
+     red_e F_list s5 (e_add e1 e2) s' (e_add e1 e')
+ | red_mul_l : forall (F_list:list F) (s5:s) (e1 e2:e) (s':s) (e':e),
+     red_e F_list s5 e1 s' e' ->
+     red_e F_list s5 (e_mul e1 e2) s' (e_add e' e2)
+ | red_mul_r : forall (F_list:list F) (s5:s) (e1 e2:e) (s':s) (e':e),
+     red_e F_list s5 e2 s' e' ->
+     red_e F_list s5 (e_mul e1 e2) s' (e_add e1 e')
+ | red_eq_l : forall (F_list:list F) (s5:s) (e1 e2:e) (s':s) (e':e),
+     red_e F_list s5 e1 s' e' ->
+     red_e F_list s5 (e_eq e1 e2) s' (e_eq e' e2)
+ | red_eq_r : forall (F_list:list F) (s5:s) (e1 e2:e) (s':s) (e':e),
+     red_e F_list s5 e2 s' e' ->
+     red_e F_list s5 (e_eq e1 e2) s' (e_eq e1 e')
+ | red_lt_l : forall (F_list:list F) (s5:s) (e1 e2:e) (s':s) (e':e),
+     red_e F_list s5 e1 s' e' ->
+     red_e F_list s5 (e_lt e1 e2) s' (e_lt e' e2)
+ | red_lt_r : forall (F_list:list F) (s5:s) (e1 e2:e) (s':s) (e':e),
+     red_e F_list s5 e2 s' e' ->
+     red_e F_list s5 (e_lt e1 e2) s' (e_lt e1 e')
  | red_fun_exp : forall (e'_list e_list:list e) (F_list:list F) (s5:s) (fc5:fc) (e_5:e) (s':s) (e':e),
      red_e F_list s5 e_5 s' e' ->
      red_e F_list s5 (e_fn_call fc5 ((app e_list (app (cons e_5 nil) (app e'_list nil))))) s' (e_fn_call fc5 ((app e_list (app (cons e' nil) (app e'_list nil)))))
