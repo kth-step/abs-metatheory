@@ -122,13 +122,15 @@ Inductive M : Set :=  (*r method definition *)
 Inductive CL : Set :=  (*r class definition *)
  | class (C5:C) (_:list (T*x)) (_:list M).
 
+Definition a : Type := list (T*x*t).
+
 Definition to : Set := (option t).
 
 Inductive P : Set :=  (*r program *)
  | program (_:list CL) (_:list (T*x)) (stmt5:stmt).
 
 Inductive task : Type := 
- | tsk (stmt5:stmt) (s5:s).
+ | tsk (stmt5:stmt) (a5:a).
 (** induction principles *)
 Section e_rect.
 
@@ -320,14 +322,48 @@ Proof.
 Qed.
 #[export] Hint Resolve stmt_eq_dec : ott_coq_equality.
 
+#[export] Instance a_eq_dec: EqDecision a.
+Proof.
+  unfold EqDecision, Decision.
+  repeat decide equality; auto with ott_coq_equality.
+Qed.
+#[export] Hint Resolve a_eq_dec : ott_coq_equality.
+
 #[export] Instance task_eq_dec: EqDecision task.
 Proof.
   unfold EqDecision, Decision.
   decide equality; auto with ott_coq_equality.
-  - by destruct (decide (s5 = s0)); [left|right].
+  - apply a_eq_dec.
   - apply stmt_eq_dec.
 Defined.
 #[export] Hint Resolve task_eq_dec : ott_coq_equality.
+
+#[export] Instance a_dom : Dom a (list x) :=
+  map (fun '(_,x,_) => x).
+
+Fixpoint update_aux (al ar:a) (x0:x) (v:t): a :=
+  match ar with
+  | [] => al
+  | (T,y,t)::ar' =>
+      if (decide (x0 = y))
+      then al ++ [(T, y, v)] ++ ar'
+      else update_aux (al ++ [(T,y,t)]) ar' x0 v
+  end.
+
+Definition update: a -> x -> t -> a := update_aux [].
+
+#[export] Instance insert_a: Insert x t a :=
+  fun x t a => update a x t.
+
+Fixpoint lookup_a_aux (x:string) (a0:a): option t :=
+  match a0 with
+  | [] => None
+  | (_,y,t) :: rest => if decide (x = y)
+                     then Some t else lookup_a_aux x rest
+  end.
+
+#[export] Instance lookup_a: Lookup string t a := lookup_a_aux.
+
 
 #[export] Instance countable_task: Countable task.
 (* is there some automation for this? *)
@@ -340,7 +376,7 @@ Definition tasko : Type := (option task).
 
 Inductive cn : Type :=  (*r configuration *)
  | cn_future (f5:f) (to5:to)
- | cn_object (C5:C) (s5:s) (tasko5:tasko) (queue5:queue)
+ | cn_object (C5:C) (a5:a) (tasko5:tasko) (queue5:queue)
  | cn_invoc (o5:o) (f5:f) (m5:m) (_:list t).
 (** definitions *)
 

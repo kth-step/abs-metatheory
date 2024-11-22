@@ -8,7 +8,7 @@ Context
     (Fs: list F)
     (*name_of should probably be partial to account for non-future ids *)
     (name_of: id -> f)
-    (id_of: f -> id)
+    (id_of: string -> id)
     (class_of: o -> C)
 .
 
@@ -145,12 +145,88 @@ Inductive stmt_well_typed: G -> stmt -> Prop :=
     stmt_well_typed G (stmt_ret e)
 .
 
+Inductive a_well_typed: G -> a -> Prop :=
+| a_wt_nil: forall Γ, a_well_typed Γ []
+| a_wt_cons: forall Γ T x v a,
+  Γ !! x = Some (ctxv_T T) ->
+  typ_e Γ (e_t v) T ->
+  a_well_typed Γ a ->
+  a_well_typed Γ ((T, x, v)::a)
+.
+
+
+Lemma a_wt_app: forall Γ a a',
+    a_well_typed Γ a ->
+    a_well_typed Γ a' ->
+    a_well_typed Γ (a ++ a').
+Proof.
+  intros.
+  induction a as [ | ((?&?)&?) ]; simpl; auto.
+  inv H.
+  econstructor; auto.
+Qed.
+
+Lemma update_aux_app: forall ar a a' x v,
+    update_aux (a ++ a') ar x v = a ++ (update_aux a' ar x v).
+Proof.
+  induction ar as [ | ((?&?)&?) ]; simpl; intros; auto.
+  case_decide; subst; auto.
+  - now rewrite <- app_assoc.
+  - rewrite <- IHar.
+    now rewrite app_assoc.
+Qed.
+
+Lemma update_update_aux: forall prefix a x v,
+    update_aux prefix a x v = prefix ++ update a x v.
+Proof.
+  induction a as [ | ((?&?)&?) ]; simpl; intros.
+  - unfold update.
+    now rewrite app_nil_r.
+  - cbn; case_decide; subst; auto.
+    apply update_aux_app.
+Qed.
+
+Lemma a_wt_insert: forall Γ ρ x v T,
+    a_well_typed Γ ρ ->
+    Γ !! x = Some (ctxv_T T) ->
+    typ_e Γ (e_t v) T ->
+    a_well_typed Γ (<[x:=v]> ρ).
+Proof.
+  induction ρ as [ | ((?&?)&?) ]; simpl; intros; try constructor.
+  inv H.
+  unfold insert, insert_a, update.
+  simpl.
+  case_decide; subst.
+  - econstructor; auto.
+    simp.
+    eapply typ_term_invariant; eauto.
+  - replace (update_aux [(t, x, t0)] ρ x0 v) with ([(t, x, t0)] ++ update ρ x0 v) by
+      now rewrite update_update_aux.
+    apply a_wt_app.
+    + repeat constructor; auto.
+    + eapply IHρ; eauto.
+Qed.
+
+Lemma a_wt_type: forall Γ l x v,
+    a_well_typed Γ l -> l !! x = Some v -> exists T, typ_e Γ (e_t v) T.
+Proof.
+  induction l as [ | ((?&?)&?) ]; simpl; intros.
+  - inv H0.
+  - inv H.
+    unfold lookup, lookup_a in H0.
+    simpl in H0.
+    case_decide; subst.
+    + inv H0.
+      now exists t.
+    + eapply IHl; auto.
+      apply H0.
+Qed.
+
 Variant task_well_typed: G -> option task -> Prop :=
   | task_wt_idle: forall Γ, task_well_typed Γ None
   | task_wt: forall Γ stmt l,
-      (* this differs from the paper since we do not treat l as a typed list *)
-      (* G_vdash_s Γ l -> *)
-      stmt_well_typed Γ stmt ->
+      a_well_typed (extend_G Γ (map (fun '(T,x,_) => (T,x)) l)) l ->
+      stmt_well_typed (extend_G Γ (map (fun '(T,x,_) => (T,x)) l)) stmt ->
       task_well_typed Γ (Some (tsk stmt l))
 .
 
@@ -158,12 +234,11 @@ Definition queue_well_typed (Γ:G) (q:queue) := forall t, t ∈ q -> task_well_t
 
 Variant cn_well_typed: G -> cn -> Prop :=
   | ob_wt: forall Γ c Cl a p q fields,
-      (* The paper also checks fields(Γ(o)), but we would need another case for ctxv *)
       get_class_decl c Cs = Some Cl ->
       get_fields Cl = fields ->
       queue_well_typed (extend_G Γ fields) q ->
       task_well_typed (extend_G Γ fields) p ->
-      G_vdash_s (extend_G Γ fields) a ->
+      a_well_typed (extend_G Γ fields) a ->
       cn_well_typed Γ (cn_object c a p q)
   | inv_wt: forall Γ o f T Ts m vs Cl,
       Γ !! f = Some (ctxv_fut T) ->
@@ -195,9 +270,11 @@ Ltac unfold_typing :=
 Definition config_well_typed (G0:G) (conf: config) :=
   forall i ob, conf !! i = Some ob -> cn_well_typed G0 ob.
 
-(* should be a theorem, but will require some assumptions on name_of/id_of and typing of futures *)
+Definition minimal (Γ:G) (conf:config): Prop := forall (y:x), id_of y ∈ dom conf.
+(* should we also allow y to be o or f in an invocation? *)
+
 Lemma fresh_config_wt: forall Γ f σ,
-    fresh f σ -> config_well_typed Γ σ -> f ∉ dom Γ.
+    fresh f σ -> config_well_typed Γ σ -> minimal Γ σ -> f ∉ dom Γ.
 Proof.
   intros.
   destruct (σ !! id_of f) eqn:?.
@@ -206,10 +283,13 @@ Proof.
     specialize (H0 _ _ Heqo).
     specialize (id_of_consistent _ _ _ _ Heqo).
     intro.
-    eapply H; eauto.
-  - admit.
-    (* this seems problematic *)
-Admitted.
+    eapply (H _ _ Heqo); eauto.
+  - specialize (H1 f).
+    apply elem_of_dom in H1.
+    inv H1.
+    setoid_rewrite H2 in Heqo.
+    discriminate.
+Qed.
 
 Lemma q_wt_remove: forall  G0 q,
     queue_well_typed  G0 q ->
@@ -291,16 +371,61 @@ Proof.
     + eapply lookup_weaken; eauto.
 Qed.
 
+Lemma a_wt_add_G: forall Γ a,
+    a_well_typed Γ a ->
+    forall Tx,
+      Γ !! Tx.2 = Some (ctxv_T Tx.1) ->
+      a_well_typed (add_G Γ Tx) a.
+Proof.
+  induction a as [ | ((?&?)&?) ]; intros.
+  - constructor.
+  - inv H.
+    econstructor.
+    + setoid_rewrite lookup_insert_ne; auto.
+    + eapply typ_term_invariant; eauto.
+    + eapply IHa; eauto.
+Qed.
+
+Lemma a_wt_add_G': forall Γ a,
+    a_well_typed Γ a ->
+    forall Tx,
+      Tx.2 ∉ dom a ->
+      a_well_typed (add_G Γ Tx) a.
+Proof.
+  induction a as [ | ((?&?)&?) ]; intros.
+  - constructor.
+  - inv H.
+    econstructor.
+    + setoid_rewrite lookup_insert_ne; auto.
+    + eapply typ_term_invariant; eauto.
+    + eapply IHa; eauto.
+      intro.
+      apply H0.
+      now right.
+Qed.
+
+Lemma subG_a_wt : forall Γ1 Γ2 a,
+    Γ1 ⊆ Γ2 -> a_well_typed  Γ1 a -> a_well_typed  Γ2 a.
+Proof.
+  intros.
+  induction a as [ | ((?&?)&?) ]; constructor; inv H0.
+  - eapply lookup_weaken; eauto.
+  - eapply typ_term_invariant; eauto.
+  - now apply IHa.
+Qed.
+
 Lemma subG_task_wt : forall Γ1 Γ2 t,
     Γ1 ⊆ Γ2 -> task_well_typed  Γ1 t -> task_well_typed  Γ2 t.
 Proof.
   intros.
+  destruct t; last constructor.
   destruct t.
-  - destruct t.
-    constructor.
-    inv H0.
-    eapply subG_stmt_wt; eauto.
-  - constructor.
+  inv H0.
+  constructor.
+  - eapply subG_a_wt; last apply H4.
+    now apply extend_subG.
+  - eapply subG_stmt_wt; last apply H5.
+    now apply extend_subG.
 Qed.
 
 Lemma subG_queue_wt : forall Γ1 Γ2 q,
@@ -325,37 +450,38 @@ Proof.
       now apply extend_subG.
     + eapply subG_task_wt; last apply H9.
       now apply extend_subG.
-    + admit. (* this is the ⊢ problem again *)
+    + eapply subG_a_wt; last apply H10.
+      now apply extend_subG.
   - econstructor; eauto.
     + eapply lookup_weaken; eauto.
     + eapply subG_typ_es; eauto.
-Admitted.
+Qed.
 
 Lemma fresh_extend_wt: forall Γ σ f,
     config_well_typed Γ σ ->
     fresh f σ ->
+    minimal Γ σ ->
     forall T_,
       config_well_typed (<[f:=T_]> Γ) σ.
 Proof.
-  intros.
-  intros i ob LUi.
+  intros * WT FRESH MIN T i ob LUi.
   remember (id_of f) as fi.
   is_eq i fi; subst.
   - pose proof id_of_well_typed _ _ _ LUi as FUT.
     inv FUT.
-    pose proof H0 _ _ _ LUi.
+    pose proof FRESH _ _ LUi.
     pose proof id_of_consistent _ _ _ _ LUi as <- .
     contradiction.
-  - epose proof H i ob LUi.
+  - epose proof WT i ob LUi.
     destruct ob.
     + enough (diff : f <> f5).
       {
         destruct to5.
-        - inv H1.
+        - inv H.
           econstructor; auto.
           + setoid_rewrite lookup_insert_ne; eauto.
-          + inv H6; constructor.
-        - inv H1.
+          + eapply typ_term_invariant; eauto.
+        - inv H.
           econstructor.
           setoid_rewrite lookup_insert_ne; eauto.
       }
@@ -365,11 +491,30 @@ Proof.
       pose proof id_of_consistent _ _ _ _ LUi.
       subst.
       contradiction.
-    + admit.
-    (* adding a future to the context does not impact typing of an object *)
-    + admit.
-      (* for invocations it is less obvious *)
-Admitted.
+    + inv H.
+      assert (SUB: extend_G Γ (get_fields Cl) ⊆ extend_G (<[f:=T]> Γ) (get_fields Cl)). {
+        apply extend_subG.
+        apply subG_add; auto.
+        apply not_elem_of_dom.
+        eapply fresh_config_wt; eauto.
+      }
+      econstructor; eauto.
+      * eapply subG_queue_wt; [apply SUB | apply H7].
+      * eapply subG_task_wt; [apply SUB | apply H8].
+      * eapply subG_a_wt; [apply SUB | apply H9].
+    + enough (diff : f <> f5).
+      {
+        inv H.
+        econstructor; eauto.
+        + setoid_rewrite lookup_insert_ne; eauto.
+        + eapply typ_term_list_invariant; eauto.
+      }
+      intro.
+      specialize (FRESH _ _ LUi).
+      simpl in FRESH.
+      subst.
+      contradiction.
+Qed.
 
 Lemma insert_lookup_ne_extend: forall Γ i j T_ l,
     i <> j ->
@@ -383,12 +528,24 @@ Proof.
     + setoid_rewrite lookup_insert_ne; eauto.
 Qed.
 
+Lemma insert_lookup_ne_extend_extend: forall Γ i j T_ l l',
+    i <> j ->
+    extend_G (extend_G (<[j:=T_]> Γ) l) l' !! i = extend_G (extend_G Γ l) l' !! i.
+Proof.
+  induction l'; intros; simpl.
+  - now apply insert_lookup_ne_extend.
+  - unfold add_G; destruct a; simpl.
+    is_eq i x.
+    + now setoid_rewrite lookup_insert.
+    + setoid_rewrite lookup_insert_ne; eauto.
+Qed.
+
 Equations CL_well_typed: G -> CL -> Prop := {
     (*TODO: implement, probably via a typ_M *)
     CL_well_typed _ _ := True
   }.
 
-(* in the apper, this is an assumptiom *)
+(* in the paper, this is an assumptiom *)
 (* should be reasonable from well typed classes and methods *)
 Lemma bind_wt: forall m Ts T CL vs f tsk,
     match_method m Ts T CL ->
@@ -431,17 +588,33 @@ Lemma Forall_typ_F_extension: forall Γ Fs Cl,
     Forall (typ_F (extend_G Γ (get_fields Cl))) Fs.
 Admitted.
 
+Lemma lookup_extend_not_in: forall Γ l y,
+    y ∉ (map snd l) -> extend_G Γ l !! y = Γ !! y.
+Proof.
+  induction l as [ | (?&?) ]; simpl; intros; auto.
+  is_eq x y.
+  - exfalso.
+    apply H.
+    now left.
+  - setoid_rewrite lookup_insert_ne; simpl; auto.
+    apply IHl.
+    intro.
+    apply H.
+    now right.
+Qed.
+
 Theorem type_preservation : forall (Γ: G),
     Forall (typ_F Γ) Fs ->
     Forall (CL_well_typed Γ) Cs ->
     forall σ σ',
       config_well_typed Γ σ ->
+      minimal Γ σ ->
       @stmt_step Fs σ σ' ->
-      exists Γ', Γ ⊆ Γ' /\ config_well_typed Γ' σ'.
+      exists Γ', Γ ⊆ Γ' /\ minimal Γ' σ /\ config_well_typed Γ' σ'.
 Proof.
-  intros Γ TYP_Fs TYP_Cs σ σ' WT STEP.
+  intros Γ TYP_Fs TYP_Cs σ σ' WT MIN STEP.
   inv STEP.
-  - exists Γ; split; auto.
+  - exists Γ; repeat split; auto.
     intros*.
     lookup_cases H1 i i0.
     + specialize (WT _ _ H0).
@@ -455,51 +628,42 @@ Proof.
     pose proof WT as Conf_wt.
     specialize (WT _ _ H1).
     unfold_typing.
-    epose proof type_preservation _ _ _ _ _ _ _ _ _ H4 H0
-      as (?Γ & ?SUB & ? & ?TYP_E).
-    (* are tasks actually well-typed under this extension? *)
-    eexists.
-    split; eauto.
+    exists Γ.
+    (* exists (extend_G (extend_G Γ (get_fields Cl)) (map (λ '(T0, x0, _), (T0, x0)) l)). *)
+    (* assert (Γ ⊆ extend_G (extend_G Γ (get_fields Cl)) (map (λ '(T1, x0, _), (T1, x0)) l)). { *)
+    (*   etransitivity; apply subG_extend. *)
+    (*   - apply CL_wt_fields_fresh. *)
+    (*     eapply Forall_forall; eauto. *)
+    (*     eapply get_class_decl_some; eauto. *)
+    (*   - admit. (* method parameter names are disjoint from class fields *) *)
+    (* } *)
+    repeat split; auto.
     intros*.
-    lookup_cases H3 i i0.
-    + econstructor; eauto.
-      econstructor; eauto.
-    + eapply Conf_wt; eauto.
+    lookup_cases H2 i i0.
+      + epose proof type_preservation _ _ _ _ _ _ _ _ _ H4 H0
+          as (?Γ & ?SUB & ? & ?TYP_E).
+        admit.
+      + eapply subG_cn_wt; last eapply Conf_wt; eauto.
 
   - destruct H0 as [sf ?].
     pose proof WT as Conf_wt.
     specialize (WT _ _ H1).
     unfold_typing.
-    epose proof type_preservation _ _ _ _ _ _ _ _ _ H4 H0
-      as (?Γ & ?SUB & ? & ?TYP_E).
-    exists Γ0.
-    split.
-    + eapply extend_subG_2; eauto.
-      apply CL_wt_fields_fresh.
-      eapply Forall_forall; eauto.
-      eapply get_class_decl_some; eauto.
-    + intros*.
-      lookup_cases H3 o i.
-      * assert (extend_G Γ (get_fields Cl) ⊆ extend_G Γ0 (get_fields Cl)). {
-          eapply extend_subG.
-          eapply extend_subG_2; eauto.
-          apply CL_wt_fields_fresh.
-          eapply Forall_forall; eauto.
-          eapply get_class_decl_some; eauto.
-        }
-        econstructor; eauto.
-        -- eapply subG_queue_wt; eauto.
-        -- constructor.
-            eapply subG_stmt_wt; eauto.
-        -- admit. (* here we are lost without consistency of a *)
-      * admit. (* we need cn_well_typed closed under extensions *)
+    exists Γ.
+    repeat split; auto.
+    intros*.
+    lookup_cases H2 o i.
+    + epose proof type_preservation _ _ _ _ _ _ _ _ _ H4 H0
+        as (?Γ & ?SUB & ? & ?TYP_E).
+      admit.
+    + eapply subG_cn_wt; last eapply Conf_wt; eauto.
 
   (* the trivial cases (ifs, skips, loops) are very similar*)
   (* TODO: automate *)
   - pose proof WT as Conf_wt.
     specialize (WT _ _ H0).
     unfold_typing.
-    exists Γ; split; auto.
+    exists Γ; repeat split; auto.
     intros*.
     lookup_cases H1 o i.
     + repeat (econstructor; eauto).
@@ -508,7 +672,7 @@ Proof.
   - pose proof WT as Conf_wt.
     specialize (WT _ _ H0).
     unfold_typing.
-    exists Γ; split; auto.
+    exists Γ; repeat split; auto.
     intros*.
     lookup_cases H1 o i.
     + repeat (econstructor; eauto).
@@ -517,7 +681,7 @@ Proof.
   - pose proof WT as Conf_wt.
     specialize (WT _ _ H).
     unfold_typing.
-    exists Γ; split; auto.
+    exists Γ; repeat split; auto.
     intros*.
     lookup_cases H0 o i.
     + repeat (econstructor; eauto).
@@ -526,7 +690,7 @@ Proof.
   - pose proof WT as Conf_wt.
     specialize (WT _ _ H).
     unfold_typing.
-    exists Γ; split; auto.
+    exists Γ; repeat split; auto.
     intros*.
     lookup_cases H0 o i.
     + repeat (econstructor; eauto).
@@ -535,7 +699,7 @@ Proof.
   - pose proof WT as Conf_wt.
     specialize (WT _ _ H).
     unfold_typing.
-    exists Γ; split; auto.
+    exists Γ; repeat split; auto.
     intros*.
     lookup_cases H0 o i.
     + repeat (econstructor; eauto).
@@ -544,13 +708,13 @@ Proof.
   - pose proof WT as Conf_wt.
     specialize (WT _ _ H3).
     unfold_typing.
-    pose proof H17 as Method_wt.
-    inv H17.
+    pose proof H18 as Method_wt.
+    inv H18.
     destruct method.
     autorewrite with get_type get_params in *.
-    epose proof type_preservation_eval_list _ _ _ _ _ _ _ H14 H2 as TYP_ARGS.
+    epose proof type_preservation_eval_list _ _ _ _ _ _ _ H15 H2 as TYP_ARGS.
     exists (<[f:=ctxv_fut T_5]> Γ).
-    split.
+    repeat split; auto.
     + apply subG_add; auto.
       apply not_elem_of_dom.
       eapply fresh_config_wt; eauto.
@@ -563,23 +727,36 @@ Proof.
             apply not_elem_of_dom_1.
             eapply fresh_config_wt; eauto.
         -- constructor.
-            econstructor.
-            ++ econstructor; eauto.
-              ** rewrite insert_lookup_ne_extend; eauto.
-              ** econstructor.
-                  eapply lookup_weaken with (<[f:=ctxv_fut T_5]> Γ).
-                  --- now setoid_rewrite lookup_insert.
-                  --- apply subG_extend.
-                      apply CL_wt_fields_fresh.
-                      apply CL_wt_add_f.
-                      eapply Forall_forall; eauto.
-                      eapply get_class_decl_some; eauto.
-            ++ eapply subG_stmt_wt; last apply H10.
-              eapply extend_subG.
+           ++ eapply subG_a_wt; last apply H7.
+              apply extend_subG.
+              apply extend_subG.
               apply subG_add; auto.
               apply not_elem_of_dom_1.
               eapply fresh_config_wt; eauto.
-        -- admit. (* should follow from freshness *)
+           ++ econstructor.
+              ** econstructor; eauto.
+                 --- rewrite insert_lookup_ne_extend_extend; eauto.
+                 --- econstructor.
+                     apply lookup_weaken with (extend_G (<[f:=ctxv_fut T_5]> Γ) (get_fields Cl)).
+                     +++ apply lookup_weaken with (<[f:=ctxv_fut T_5]> Γ).
+                         *** now apply lookup_insert.
+                         *** apply subG_extend.
+                             apply CL_wt_fields_fresh.
+                             eapply Forall_forall; eauto.
+                             eapply get_class_decl_some; eauto.
+                     +++ apply subG_extend.
+                         admit. (* fields are fresh *)
+              ** eapply subG_stmt_wt; last apply H12.
+                 apply extend_subG.
+                 apply extend_subG.
+                 apply subG_add; auto.
+                 apply not_elem_of_dom_1.
+                 eapply fresh_config_wt; eauto.
+        -- eapply subG_a_wt; last apply H13.
+           apply extend_subG.
+           apply subG_add; auto.
+           apply not_elem_of_dom_1.
+           eapply fresh_config_wt; eauto.
 
       * lookup_cases H5 i i0.
         -- econstructor; eauto.
@@ -597,7 +774,7 @@ Proof.
 
   - pose proof WT _ _ H0 as fut_well_typed.
     pose proof WT _ _ H1 as ob_well_typed.
-    exists Γ; split; auto.
+    exists Γ; repeat split; auto.
     intros*.
     unfold_typing.
     lookup_cases H3 o i.
@@ -607,31 +784,43 @@ Proof.
       * econstructor; eauto.
         epose proof type_preservation_eval _ _ _ _ _ _ _ H5 H.
         enough (T0 = T) by (subst; inv H3; constructor).
-        (* now we have a problem since the local state is not required to be consistent *)
-        (* pose proof (H15 _ _ H5) as (?t & ? & ?); simp. *)
-        (* inv H1; inv H9. *)
-        admit.
+        enough (SAME: Γ !! destiny = Γ !! f). {
+          do 2 rewrite lookup_extend_not_in in H12.
+          setoid_rewrite H6 in SAME.
+          setoid_rewrite H12 in SAME.
+          now inv SAME.
+          (* destiny is not in fields or params *)
+          admit.
+          admit.
+          admit.
+          }
+          admit. (* we should know this from l !! destiny and well-typing of l *)
+
       * eapply WT; eauto.
 
   - pose proof WT _ _ H as fut_well_typed.
     pose proof WT _ _ H0 as ob_well_typed.
-    exists Γ; split; auto.
+    exists Γ; repeat split; auto.
     intros*.
     unfold_typing.
     lookup_cases H1 o i.
     + repeat (econstructor; eauto).
       enough (T1 = T) by (subst; eapply typ_term_invariant; eauto).
-      eapply lookup_weaken with (m2:=extend_G Γ (get_fields Cl)) in H5.
+      eapply lookup_weaken with (m2:=extend_G (extend_G Γ (get_fields Cl)) (map (λ '(T0, x0, _), (T0, x0)) l)) in H5.
       now simp.
-      apply subG_extend.
-      apply CL_wt_fields_fresh.
-      eapply Forall_forall; eauto.
-      eapply get_class_decl_some; eauto.
+      etransitivity.
+      * eapply subG_extend.
+        apply CL_wt_fields_fresh.
+        eapply Forall_forall; eauto.
+        eapply get_class_decl_some; eauto.
+      * apply subG_extend.
+        admit.
+        (* params are disjoint from fields *)
     + eapply WT; eauto.
 
   - pose proof WT _ _ H as ob_well_typed.
     pose proof WT _ _ H0 as inv_well_typed.
-    exists Γ; split; auto.
+    exists Γ; repeat split; auto.
     intros*.
     unfold_typing.
     + lookup_cases H1 oi i0.
@@ -649,6 +838,7 @@ Proof.
             apply CL_wt_fields_fresh.
             eapply Forall_forall; eauto.
             eapply get_class_decl_some; eauto.
+        -- admit.
       * is_eq i i0.
         -- exfalso.
             setoid_rewrite (lookup_delete σ i) in H1.
@@ -670,6 +860,7 @@ Proof.
             apply CL_wt_fields_fresh.
             eapply Forall_forall; eauto.
             eapply get_class_decl_some; eauto.
+        -- admit.
 
       * is_eq i i0.
         -- exfalso.
@@ -680,9 +871,8 @@ Proof.
 
             Unshelve.
             all: try eauto.
-            all: try (now apply G_vdash_union).
-            all: apply Forall_typ_F_extension; auto;
-              eapply get_class_decl_some; eauto.
+            all: try (apply Forall_typ_F_extension; auto;
+              eapply get_class_decl_some; eauto).
 Admitted.
 End Typing.
 (*TODO: labels + traces? *)

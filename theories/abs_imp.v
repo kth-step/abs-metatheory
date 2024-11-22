@@ -42,13 +42,11 @@ Proof.
   + right; auto.
 Qed.
 
-Equations bind_params_aux (s0:s) (vs: list t) (params: list (T*x)): s := {
-    bind_params_aux s0 [] _ := s0;
-    bind_params_aux s0 _ [] := s0;
-    bind_params_aux s0 (v::vs) ((_,x)::Txs) := insert x v (bind_params_aux s0 vs Txs)
+Equations bind_params (vs: list t) (params: list (T*x)): a := {
+    bind_params [] _ := [];
+    bind_params _ [] := [];
+    bind_params (v::vs) ((T,x)::Txs) := (T, x, v) :: bind_params vs Txs
   }.
-
-Definition bind_params := bind_params_aux empty.
 
 Equations bind (m0:m) (vs: list t) (f0:f) (CL0:CL) : option task := {
     bind m vs f (class n params m_list) :=
@@ -58,6 +56,8 @@ Equations bind (m0:m) (vs: list t) (f0:f) (CL0:CL) : option task := {
           Some (tsk body (bind_params vs params))
       end
   }.
+
+Definition a_to_s: a -> s := foldr (fun '(_, x, v) s0 => <[x:=v]> s0) ∅.
 
 Definition eval (Fs: list F) (s0:s) (e0:e) (v:t): Prop :=
   exists sf, (rtc (reduce Fs)) (e0, s0) (e_t v, sf).
@@ -70,7 +70,14 @@ Equations eval_list (Fs: list F) (s0:s) (es: list e) (vs: list t): Prop := {
 
 Definition destiny: f := "destiny"%string.
 
-Definition fresh (f0:f) (σ:config) : Prop := forall i f v, σ !! i = Some (cn_future f v) -> f <> f0.
+Definition fresh_cn (ob:cn) (f0:f): Prop :=
+  match ob with
+  | cn_future f _ => f <> f0
+  | cn_invoc _ f _ _ => f <> f0
+  | _ => True
+  end.
+
+Definition fresh (f0:f) (σ:config) : Prop := forall i ob, σ !! i = Some ob -> fresh_cn ob f0.
 (* should we also require no invocations that mention f?
    alternatively we could assume (id_of f) is always present for invocations
  *)
@@ -83,23 +90,23 @@ Inductive stmt_step {Fs: list F}: config -> config -> Prop :=
 
 | step_asgn1: forall σ i a C l x e s q v,
     x ∈ dom l ->
-    eval Fs (union a l) e v ->
+    eval Fs (union (a_to_s a) (a_to_s l)) e v ->
     σ !! i = Some (cn_object C a (Some (tsk (stmt_seq (stmt_asgn x (rhs_e e)) s) l)) q) ->
     stmt_step σ (<[i:=(cn_object C a (Some (tsk s (<[x:=v]> l))) q)]> σ)
 
 | step_asgn2: forall σ o a C l x e s q v,
     x ∈ dom a ->
-    eval Fs (union a l) e v ->
+    eval Fs (union (a_to_s a) (a_to_s l)) e v ->
     σ !! o = Some (cn_object C a (Some (tsk (stmt_seq (stmt_asgn x (rhs_e e)) s) l)) q) ->
     stmt_step σ (<[o:=(cn_object C (<[x:=v]> a) (Some (tsk s l)) q)]> σ)
 
 | step_cond1: forall σ o a C l e s1 s2 s q,
-    eval Fs (union a l) e (t_b true) ->
+    eval Fs (union (a_to_s a) (a_to_s l)) e (t_b true) ->
     σ !! o = Some (cn_object C a (Some (tsk (stmt_seq (stmt_cond e s1 s2) s) l)) q) ->
     stmt_step σ (<[o:=cn_object C a (Some (tsk (stmt_seq s1 s) l)) q]> σ)
 
 | step_cond2: forall σ o a C l e s1 s2 s q,
-    eval Fs (union a l) e (t_b false) ->
+    eval Fs (union (a_to_s a) (a_to_s l)) e (t_b false) ->
     σ !! o = Some (cn_object C a (Some (tsk (stmt_seq (stmt_cond e s1 s2) s) l)) q) ->
     stmt_step σ (<[o:=cn_object C a (Some (tsk (stmt_seq s2 s) l)) q]> σ)
 
@@ -119,14 +126,14 @@ Inductive stmt_step {Fs: list F}: config -> config -> Prop :=
     fresh f σ ->
     ~ i ∈ dom σ ->
     ~ j ∈ dom σ ->
-    eval_list Fs (union a l) es vs ->
+    eval_list Fs (union (a_to_s a) (a_to_s l)) es vs ->
     σ !! oi = Some (cn_object C a (Some (tsk (stmt_seq (stmt_asgn x (rhs_invoc o' m es)) s) l)) q) ->
     stmt_step σ (<[oi:=cn_object C a (Some (tsk (stmt_seq (stmt_asgn x (rhs_get f)) s) l)) q]>
                    (<[i:=cn_invoc o' f m vs]>
                       (<[j:=cn_future f None]> σ)))
 
 | step_return: forall σ o a C l e v q f fi,
-    eval Fs (union a l) e v ->
+    eval Fs (union (a_to_s a) (a_to_s l)) e v ->
     σ !! fi = Some (cn_future f None) ->
     σ !! o = Some (cn_object C a (Some (tsk (stmt_ret e) l)) q) ->
     l !! destiny = Some (t_fut fi) ->

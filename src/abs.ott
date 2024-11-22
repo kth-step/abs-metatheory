@@ -157,9 +157,13 @@ s {{ tex \sigma }} :: s_ ::=
    | s [ x1 |-> t1 , ... , xn |-> tn ] :: M :: add_list
      {{ coq (foldr (fun (xt : x * t) (s0 : s) => insert (fst xt) (snd xt) s0) [[s]] [[x1 |-> t1 ... xn |-> tn]]) }}
 
+a {{ tex a }} :: a_ ::=
+  {{ coq list (T*x*t)}}
+  {{ coq-universe Type }}
+
 task :: '' ::=
  {{ coq-universe Type }}
-| tsk ( stmt , s ) :: :: tsk
+| tsk ( stmt , a ) :: :: tsk
 
 G {{ tex \Gamma }} :: G_ ::=
   {{ coq gmap x ctxv }}
@@ -360,14 +364,48 @@ Proof.
 Qed.
 #[export] Hint Resolve stmt_eq_dec : ott_coq_equality.
 
+#[export] Instance a_eq_dec: EqDecision a.
+Proof.
+  unfold EqDecision, Decision.
+  repeat decide equality; auto with ott_coq_equality.
+Qed.
+#[export] Hint Resolve a_eq_dec : ott_coq_equality.
+
 #[export] Instance task_eq_dec: EqDecision task.
 Proof.
   unfold EqDecision, Decision.
   decide equality; auto with ott_coq_equality.
-  - by destruct (decide (s5 = s0)); [left|right].
+  - apply a_eq_dec.
   - apply stmt_eq_dec.
 Defined.
 #[export] Hint Resolve task_eq_dec : ott_coq_equality.
+
+#[export] Instance a_dom : Dom a (list x) :=
+  map (fun '(_,x,_) => x).
+
+Fixpoint update_aux (al ar:a) (x0:x) (v:t): a :=
+  match ar with
+  | [] => al
+  | (T,y,t)::ar' =>
+      if (decide (x0 = y))
+      then al ++ [(T, y, v)] ++ ar'
+      else update_aux (al ++ [(T,y,t)]) ar' x0 v
+  end.
+
+Definition update: a -> x -> t -> a := update_aux [].
+
+#[export] Instance insert_a: Insert x t a :=
+  fun x t a => update a x t.
+
+Fixpoint lookup_a_aux (x:string) (a0:a): option t :=
+  match a0 with
+  | [] => None
+  | (_,y,t) :: rest => if decide (x = y)
+                     then Some t else lookup_a_aux x rest
+  end.
+
+#[export] Instance lookup_a: Lookup string t a := lookup_a_aux.
+
 
 #[export] Instance countable_task: Countable task.
 (* is there some automation for this? *)
@@ -395,7 +433,7 @@ cn :: cn_ ::=
   {{ com configuration }}
   {{ coq-universe Type }}
 | future ( f , to ) :: :: future
-| object ( C , s , tasko , queue ) :: :: object
+| object ( C , a , tasko , queue ) :: :: object
 | invoc ( o , f , m , t1 .. tn ) :: :: invoc
 
 defns
