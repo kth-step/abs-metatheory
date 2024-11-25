@@ -3,6 +3,7 @@
 -arg -w -arg -deprecated-syntactic-definition-since-8.20
 
 theories/abs_defs.v
+theories/abs_relations.v
 theories/abs_examples.v
 theories/abs_functional_metatheory.v
 theories/abs_imp.v
