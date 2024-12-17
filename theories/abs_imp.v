@@ -70,14 +70,32 @@ Equations eval_list (Fs: list F) (s0:s) (es: list e) (vs: list t): Prop := {
 
 Definition destiny: f := "destiny"%string.
 
-Definition fresh_cn (ob:cn) (f0:f): Prop :=
-  match ob with
-  | cn_future f _ => f <> f0
-  | cn_invoc _ f _ _ => f <> f0
-  | _ => True
-  end.
+Variant occurs_in: config -> string -> Prop :=
+  | occurs_in_object_fields: forall σ i x a c p q,
+      x ∈ dom a ->
+      σ !! i = Some (cn_object c a p q) ->
+      occurs_in σ x
+  | occurs_in_object_task: forall σ i x a l c p q,
+      x ∈ dom l ->
+      σ !! i = Some (cn_object c a (Some (tsk p l)) q) ->
+      occurs_in σ x
+  | occurs_in_object_queue: forall σ i x a c to q p l,
+      x ∈ dom l ->
+      (tsk p l) ∈ q ->
+      σ !! i = Some (cn_object c a to q) ->
+      occurs_in σ x
+  | occurs_in_future: forall σ i f to,
+      σ !! i = Some (cn_future f to) ->
+      occurs_in σ f
+  | occurs_in_invoc_fut: forall σ i o f m vs,
+      σ !! i = Some (cn_invoc o f m vs) ->
+      occurs_in σ f
+  | occurs_in_invoc_ob: forall σ i o f m vs,
+      σ !! i = Some (cn_invoc o f m vs) ->
+      occurs_in σ o
+.
 
-Definition fresh (f0:f) (σ:config) : Prop := forall i ob, σ !! i = Some ob -> fresh_cn ob f0.
+Definition fresh (y:string) (σ:config) : Prop := ~ occurs_in σ y.
 (* should we also require no invocations that mention f?
    alternatively we could assume (id_of f) is always present for invocations
  *)
@@ -90,12 +108,14 @@ Inductive stmt_step {Fs: list F}: config -> config -> Prop :=
 
 | step_asgn1: forall σ i a C l x e s q v,
     x ∈ dom l ->
+    x ∉ dom a ->
     eval Fs (union (a_to_s a) (a_to_s l)) e v ->
     σ !! i = Some (cn_object C a (Some (tsk (stmt_seq (stmt_asgn x (rhs_e e)) s) l)) q) ->
     stmt_step σ (<[i:=(cn_object C a (Some (tsk s (<[x:=v]> l))) q)]> σ)
 
 | step_asgn2: forall σ o a C l x e s q v,
     x ∈ dom a ->
+    x ∉ dom l ->
     eval Fs (union (a_to_s a) (a_to_s l)) e v ->
     σ !! o = Some (cn_object C a (Some (tsk (stmt_seq (stmt_asgn x (rhs_e e)) s) l)) q) ->
     stmt_step σ (<[o:=(cn_object C (<[x:=v]> a) (Some (tsk s l)) q)]> σ)
