@@ -389,7 +389,7 @@ tasko :: '' ::=
 | _|_ :: M :: none
   {{ coq None }}
 | task :: M :: some
-  {{ coq (Some [[t]]) }}
+  {{ coq (Some [[task]]) }}
 
 cn :: cn_ ::=
   {{ com configuration }}
