@@ -1,0 +1,89 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<link href="coqdocjs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="config.js"></script>
+<script type="text/javascript" src="coqdocjs.js"></script>
+</head>
+
+<body onload="document.getElementById('content').focus()">
+  <div id="header">
+    <span class="left">
+      <span class="modulename"> <script> document.write(document.title) </script> </span>
+    </span>
+
+    <span class="button" id="toggle-proofs"></span>
+
+    <span class="right">
+      <a href="./../..">Project Website</a>
+      <a href="./indexpage.html">Index</a>
+      <a href="./toc.html">Table of Contents</a>
+    </span>
+</div>
+    <div id="content" tabindex="-1" onblur="document.getElementById('content').focus()">
+    <div id="main">
+<div class="code">
+<span class="id" title="keyword">From</span> <span class="id" title="var">stdpp</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="library">prelude</span> <span class="id" title="library">strings</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">ABS</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <a class="idref" href="ABS.abs_defs.html#"><span class="id" title="library">abs_defs</span></a>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab2"></a><h1 class="section">ABS Examples</h1>
+
+</div>
+<div class="code">
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="e_const_5" class="idref" href="#e_const_5"><span class="id" title="definition">e_const_5</span></a> : <a class="idref" href="ABS.abs_defs.html#e"><span class="id" title="inductive">e</span></a> := <br/>
+&nbsp;&nbsp;<a class="idref" href="ABS.abs_defs.html#e_t"><span class="id" title="constructor">e_t</span></a> (<a class="idref" href="ABS.abs_defs.html#t_int"><span class="id" title="constructor">t_int</span></a> 5%<span class="id" title="var">Z</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="func_const_5" class="idref" href="#func_const_5"><span class="id" title="definition">func_const_5</span></a> : <a class="idref" href="ABS.abs_defs.html#F"><span class="id" title="inductive">F</span></a> := <br/>
+&nbsp;&nbsp;<a class="idref" href="ABS.abs_defs.html#F_fn"><span class="id" title="constructor">F_fn</span></a> <a class="idref" href="ABS.abs_defs.html#T_int"><span class="id" title="constructor">T_int</span></a> "const_5"%<span class="id" title="var">string</span> <a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Lists.List.html#ae9a5e1034e143b218b09d8e454472bd"><span class="id" title="notation">[]</span></a> <a class="idref" href="ABS.abs_examples.html#e_const_5"><span class="id" title="definition">e_const_5</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="e_call_const_5" class="idref" href="#e_call_const_5"><span class="id" title="definition">e_call_const_5</span></a> : <a class="idref" href="ABS.abs_defs.html#e"><span class="id" title="inductive">e</span></a> :=<br/>
+&nbsp;&nbsp;<a class="idref" href="ABS.abs_defs.html#e_fn_call"><span class="id" title="constructor">e_fn_call</span></a> "const_5"%<span class="id" title="var">string</span> <a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Lists.List.html#ae9a5e1034e143b218b09d8e454472bd"><span class="id" title="notation">[]</span></a>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <a id="Ctx" class="idref" href="#Ctx"><span class="id" title="definition">Ctx</span></a> : <a class="idref" href="ABS.abs_defs.html#G"><span class="id" title="definition">G</span></a> :=<br/>
+&nbsp;&nbsp;<span class="id" title="definition">insert</span> ("const_5"%<span class="id" title="var">string</span>) (<a class="idref" href="ABS.abs_defs.html#ctxv_sig"><span class="id" title="constructor">ctxv_sig</span></a> (<a class="idref" href="ABS.abs_defs.html#sig_sig"><span class="id" title="constructor">sig_sig</span></a> <a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Lists.List.html#ae9a5e1034e143b218b09d8e454472bd"><span class="id" title="notation">[]</span></a> <a class="idref" href="ABS.abs_defs.html#T_int"><span class="id" title="constructor">T_int</span></a>)) <span class="id" title="definition">empty</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="e_const_5_T_int" class="idref" href="#e_const_5_T_int"><span class="id" title="lemma">e_const_5_T_int</span></a> :<br/>
+&nbsp;<a class="idref" href="ABS.abs_defs.html#typ_e"><span class="id" title="inductive">typ_e</span></a> <a class="idref" href="ABS.abs_examples.html#Ctx"><span class="id" title="definition">Ctx</span></a> <a class="idref" href="ABS.abs_examples.html#e_const_5"><span class="id" title="definition">e_const_5</span></a> <a class="idref" href="ABS.abs_defs.html#T_int"><span class="id" title="constructor">T_int</span></a>.<br/>
+<span class="id" title="keyword">Proof</span>. <span class="id" title="tactic">by</span> <span class="id" title="tactic">apply</span> <a class="idref" href="ABS.abs_defs.html#typ_int"><span class="id" title="constructor">typ_int</span></a>. <span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="e_call_const_typ_F" class="idref" href="#e_call_const_typ_F"><span class="id" title="lemma">e_call_const_typ_F</span></a> :<br/>
+&nbsp;<a class="idref" href="ABS.abs_defs.html#typ_F"><span class="id" title="inductive">typ_F</span></a> <a class="idref" href="ABS.abs_examples.html#Ctx"><span class="id" title="definition">Ctx</span></a> <a class="idref" href="ABS.abs_examples.html#func_const_5"><span class="id" title="definition">func_const_5</span></a>.<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">apply</span> <a class="idref" href="ABS.abs_defs.html#typ_func_decl"><span class="id" title="constructor">typ_func_decl</span></a>.<br/>
+&nbsp;&nbsp;- <span class="id" title="var">easy</span>.<br/>
+&nbsp;&nbsp;- <span class="id" title="tactic">apply</span> <a class="idref" href="ABS.abs_examples.html#e_const_5_T_int"><span class="id" title="lemma">e_const_5_T_int</span></a>.<br/>
+&nbsp;&nbsp;- <span class="id" title="tactic">simpl</span>; <span class="id" title="tactic">constructor</span>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <a id="e_call_const_5_T_int" class="idref" href="#e_call_const_5_T_int"><span class="id" title="lemma">e_call_const_5_T_int</span></a> :<br/>
+&nbsp;<a class="idref" href="ABS.abs_defs.html#typ_e"><span class="id" title="inductive">typ_e</span></a> <a class="idref" href="ABS.abs_examples.html#Ctx"><span class="id" title="definition">Ctx</span></a> <a class="idref" href="ABS.abs_examples.html#e_call_const_5"><span class="id" title="definition">e_call_const_5</span></a> <a class="idref" href="ABS.abs_defs.html#T_int"><span class="id" title="constructor">T_int</span></a>.<br/>
+<span class="id" title="keyword">Proof</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">unfold</span> <a class="idref" href="ABS.abs_examples.html#e_call_const_5"><span class="id" title="definition">e_call_const_5</span></a>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">replace</span> <a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Lists.List.html#ae9a5e1034e143b218b09d8e454472bd"><span class="id" title="notation">[]</span></a> <span class="id" title="keyword">with</span> (<a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Lists.List.html#map"><span class="id" title="definition">map</span></a> (<span class="id" title="keyword">fun</span> (<a id="pat_:1" class="idref" href="#pat_:1"><span class="id" title="binder"><span id="pat_:3" class="id">pat_</span></span></a>:(<a class="idref" href="ABS.abs_defs.html#e"><span class="id" title="inductive">e</span></a><a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Init.Datatypes.html#11c698c8685bb8ab1cf725545c085ac4"><span class="id" title="notation">*</span></a><a class="idref" href="ABS.abs_defs.html#T"><span class="id" title="inductive">T</span></a>)) =&gt; <span class="id" title="keyword">match</span> <a class="idref" href="ABS.abs_examples.html#pat_:1"><span class="id" title="variable">pat_</span></a> <span class="id" title="keyword">with</span> <a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">(</span></a><span class="id" title="var">e_</span><a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">,</span></a><span class="id" title="var">T_</span><a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Init.Datatypes.html#e6756e10c36f149b18b4a8741ed83079"><span class="id" title="notation">)</span></a> =&gt; <span class="id" title="var">e_</span> <span class="id" title="keyword">end</span> ) <a class="idref" href="http://coq.inria.fr/doc/V8.20.0/stdlib//Coq.Lists.List.html#ae9a5e1034e143b218b09d8e454472bd"><span class="id" title="notation">[]</span></a>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="tactic">by</span> <span class="id" title="tactic">auto</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">by</span> <span class="id" title="tactic">apply</span> <a class="idref" href="ABS.abs_defs.html#typ_func_expr"><span class="id" title="constructor">typ_func_expr</span></a>.<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+</div>
+</div>
+<div id="footer">
+  Generated by <a href="http://coq.inria.fr">coqdoc</a> and improved with <a href="https://github.com/palmskog/coqdocjs">CoqdocJS</a> as adapted for <a href="https://github.com/coq-community">coq-community</a>
+</div>
+</div>
+</body>
+
+</html>
