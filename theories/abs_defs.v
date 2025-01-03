@@ -9,60 +9,16 @@ Require Import Ott.ott_list_core.
 From Equations Require Import Equations.
 From stdpp Require Import prelude strings gmap gmultiset countable.
 
-#[export] Hint Resolve bool_dec : ott_coq_equality.
-#[export] Hint Resolve Ascii.ascii_dec : ott_coq_equality.
-#[export] Hint Resolve BinPos.Pos.eq_dec : ott_coq_equality.
-
 (** * ABS Definitions *)
 
 Definition i : Set := nat. (* index variables (subscripts) *)
-Lemma eq_i: forall (x y : i), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-#[export] Hint Resolve eq_i : ott_coq_equality.
 Definition fc : Set := string. (* function name *)
-Lemma eq_fc: forall (x y : fc), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-#[export] Hint Resolve eq_fc : ott_coq_equality.
 Definition x : Set := string. (* variable *)
-Lemma eq_x: forall (x' y : x), {x' = y} + {x' <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-#[export] Hint Resolve eq_x : ott_coq_equality.
 Definition fut : Set := nat. (* future type *)
-Lemma eq_fut: forall (x y : fut), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-#[export] Hint Resolve eq_fut : ott_coq_equality.
 Definition f : Set := string. (* future name *)
-Lemma eq_f: forall (x y : f), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-#[export] Hint Resolve eq_f : ott_coq_equality.
 Definition o : Set := string. (* object name *)
-Lemma eq_o: forall (x y : o), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-#[export] Hint Resolve eq_o : ott_coq_equality.
 Definition m : Set := string. (* method name *)
-Lemma eq_m: forall (x y : m), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-#[export] Hint Resolve eq_m : ott_coq_equality.
 Definition C : Set := string. (* class name *)
-Lemma eq_C: forall (x y : C), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-#[export] Hint Resolve eq_C : ott_coq_equality.
 
 Definition z : Set := Z.
 
@@ -166,7 +122,7 @@ End e_rect.
 
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
- e_var_subst_one (e_var x0) x_ y_ := if (eq_x x0 x_) then (e_var y_) else (e_var x0);
+ e_var_subst_one (e_var x0) x_ y_ := if decide (x0 = x_) then (e_var y_) else (e_var x0);
  e_var_subst_one (e_neg e0) _ _ := e_neg (e_var_subst_one e0 x_ y_);
  e_var_subst_one (e_not e0) _ _ := e_not (e_var_subst_one e0 x_ y_);
  e_var_subst_one (e_add e1 e2) _ _ := e_add (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);

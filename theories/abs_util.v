@@ -45,7 +45,7 @@ Proof.
 Qed.
 
 Definition replace_var (x0:x) (sub:list(x*x)) :=
- fold_right (fun '(x_, y_) x0 => if (eq_x x0 x_) then y_ else x0) x0 sub.
+ fold_right (fun '(x_, y_) x0 => if decide (x0 = x_) then y_ else x0) x0 sub.
 
 Lemma subst_var: forall x0 sub,
   e_var_subst (e_var x0) sub = e_var (replace_var x0 sub).
@@ -55,7 +55,7 @@ Proof.
   - destruct a; simpl.
     rewrite IHsub.
     simp e_var_subst_one.
-    destruct (eq_x (replace_var x0 sub)); subst; eauto.
+    case_decide; subst; eauto.
 Qed.
 
 Lemma e_list_subst_map: forall x0 y0 e_list,
@@ -256,12 +256,12 @@ Proof.
     destruct a as (?x_, ?y); simpl.
     rewrite subst_var.
     simp e_var_subst_one.
-    destruct (eq_x (replace_var x5 sub) x_).
+    case_decide.
     + simp fresh_vars_e.
       intro.
       apply H1.
       left.
-      now inv H2.
+      now inv H3.
     + rewrite <- subst_var.
       apply Decidable.not_or in H1.
       destruct H1.
