@@ -18,7 +18,7 @@ jobs:
       - name: Build coqdoc
         uses: coq-community/docker-coq-action@v1
         with:
-          custom_image: 'coqorg/coq:8.19'
+          custom_image: 'coqorg/coq:8.20'
           custom_script: |
             {{before_install}}
             startGroup "Build dependencies"

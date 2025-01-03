@@ -20,7 +20,7 @@ Formal metatheory in Coq for the ABS language.
   - Åsmund Kløvstad
   - Karl Palmskog
 - License: [MIT License](LICENSE)
-- Compatible Coq versions: 8.16 or later
+- Compatible Coq versions: 8.18 or later
 - Additional dependencies:
   - [Ott Coq library](https://github.com/ott-lang/ott) 0.33 or later
   - [Equations Coq library](https://github.com/mattam82/Coq-Equations) 1.3 or later
@@ -35,7 +35,7 @@ To install all dependencies, do:
 
 ```shell
 opam repo add coq-released https://coq.inria.fr/opam/released
-opam install coq.8.18.0 coq-ott coq-equations coq-stdpp
+opam install coq.8.20.0 coq-ott coq-equations coq-stdpp
 ```
 
 To build when dependencies are installed, do:

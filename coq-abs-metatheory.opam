@@ -16,7 +16,7 @@ Formal metatheory in Coq for the ABS language."""
 
 build: ["dune" "build" "-p" name "-j" jobs]
 depends: [
-  "dune" {>= "3.5"}
+  "dune" {>= "3.6"}
   "coq" {>= "8.18"}
   "coq-ott" {>= "0.33"}
   "coq-equations" {>= "1.3"}

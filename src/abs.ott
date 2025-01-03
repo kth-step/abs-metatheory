@@ -97,9 +97,11 @@ e :: e_ ::=
 rhs :: rhs_ ::=
   {{ com right-hand side in assignment }}
 | e :: :: e
+  {{ com expression }}
 | o ! m ( e1 , ... , en ) :: :: invoc
-  {{ com we invoke on an object directly, not by some mysterious evaluation to object identifiers }}
+  {{ com method invocation }}
 | f . get :: :: get
+  {{ com value of future }}
 
 stmt :: stmt_ ::=
   {{ com statement }}
@@ -145,6 +147,7 @@ s {{ tex \sigma }} :: s_ ::=
 
 task :: '' ::=
  {{ coq-universe Type }}
+ {{ com runtime task }}
 | tsk ( stmt , s ) :: :: tsk
 
 G {{ tex \Gamma }} :: G_ ::=
