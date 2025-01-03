@@ -67,7 +67,7 @@ Proof.
 
     cbn.
     intros ?y ?T_ ?.
-    destruct (eq_x y y0); subst.
+    destruct (decide (y = y0)); subst.
   - exists t_.
     split; eauto with simpl_map.
     assert (T_ = get_type T_0).
@@ -190,7 +190,7 @@ Proof.
       now simpl.
     + destruct a.
       simpl.
-      destruct (eq_x (replace_var x5 sub_list) x); subst.
+      destruct (decide ((replace_var x5 sub_list) = x)); subst.
       * eapply H0; eauto.
         -- now left.
         -- apply IHsub_list; eauto.
@@ -285,14 +285,14 @@ Proof.
       inv H.
       apply lookup_insert_Some in H3.
       destruct H3 as [(?,?)|(?,?)]; subst.
-      + destruct (eq_x x5 x5); subst.
+      + destruct (decide (x5 = x5)); subst.
         * constructor.
           now simpl_map.
         * contradiction.
 
-      + destruct (eq_x x5 x0); subst.
+      + destruct (decide (x5 = x0)); subst.
         * contradiction.
-        * destruct (eq_x x5 y0); subst.
+        * destruct (decide (x5 = y0)); subst.
           -- simp fresh_vars_e in H0.
              exfalso.
              apply H0.

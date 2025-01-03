@@ -3,56 +3,43 @@ embed
 From Equations Require Import Equations.
 From stdpp Require Import prelude strings gmap gmultiset countable.
 
-#[export] Hint Resolve bool_dec : ott_coq_equality.
-#[export] Hint Resolve Ascii.ascii_dec : ott_coq_equality.
-#[export] Hint Resolve BinPos.Pos.eq_dec : ott_coq_equality.
-
 (** * ABS Definitions *)
 }}
 indexvar i, j, n ::=
       {{ lex numeral }}
       {{ coq nat }}
-      {{ coq-equality }}
       {{ com index variables (subscripts) }}
 metavar fc ::=
       {{ lex Alphanum }}
       {{ coq string }}
-      {{ coq-equality }}
       {{ com function name }}
 metavar x, y ::=
       {{ lex alphanum }}
       {{ coq string }}
-      {{ coq-equality }}
       {{ com variable }}
 metavar fut ::=
   {{ lex numeral }}
   {{ com future type }}
-  {{ coq-equality }}
   {{ coq nat }}
 metavar f ::=
   {{ lex alphanum }}
   {{ com future name }}
-  {{ coq-equality }}
   {{ coq string }}
 metavar o ::=
   {{ lex alphanum }}
   {{ com object name }}
-  {{ coq-equality }}
   {{ coq string }}
 metavar m ::=
   {{ lex alphanum }}
   {{ com method name }}
-  {{ coq-equality }}
   {{ coq string }}
 metavar C ::=
   {{ lex alphanum }}
   {{ com class name }}
-  {{ coq-equality }}
   {{ coq string }}
 grammar
 z :: z_ ::=
   {{ com integer }}
-  {{ coq-equality }}
   {{ coq Z }}
 | z (+) z' :: M :: plus
   {{ coq (Z.add [[z]] [[z']]) }}
@@ -63,7 +50,6 @@ z :: z_ ::=
 
 b :: b_ ::=
   {{ com boolean }}
-  {{ coq-equality }}
   {{ coq bool }}
 | (!) b :: M :: not
   {{ coq (negb [[b]]) }}
@@ -206,7 +192,7 @@ embed
 
 Equations e_var_subst_one (e5:e) (x_ y_: x) : e := {
  e_var_subst_one (e_t t) _ _ := e_t t;
- e_var_subst_one (e_var x0) x_ y_ := if (eq_x x0 x_) then (e_var y_) else (e_var x0);
+ e_var_subst_one (e_var x0) x_ y_ := if decide (x0 = x_) then (e_var y_) else (e_var x0);
  e_var_subst_one (e_neg e0) _ _ := e_neg (e_var_subst_one e0 x_ y_);
  e_var_subst_one (e_not e0) _ _ := e_not (e_var_subst_one e0 x_ y_);
  e_var_subst_one (e_add e1 e2) _ _ := e_add (e_var_subst_one e1 x_ y_) (e_var_subst_one e2 x_ y_);
