@@ -69,7 +69,7 @@ build: |-
   
   ```shell
   opam repo add coq-released https://coq.inria.fr/opam/released
-  opam install coq.8.19.2 coq-ott coq-equations coq-stdpp
+  opam install coq.8.20.0 coq-ott coq-equations coq-stdpp
   ```
   
   To build when dependencies are installed, do:
