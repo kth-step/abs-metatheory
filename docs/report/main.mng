@@ -45,11 +45,12 @@ We define ABS and describe its metatheory.
 
 \section{Introduction}
 \label{sec:intro}
-Introduction goes here.
+We describe the syntax, semantics, and metatheory of the ABS language.
 
 \section{Syntax}
 \label{sec:syntax}
 
+\subsection{Functional Syntax}
 In this section, we define the abstract syntax of ABS.
 
 \ottgrammartabular{\ottT\ottinterrule}
@@ -60,23 +61,41 @@ In this section, we define the abstract syntax of ABS.
 
 \ottgrammartabular{\otte\ottinterrule}
 
+\subsection{Object Syntax}
+
+\ottgrammartabular{\ottrhs\ottinterrule}
+
+\ottgrammartabular{\ottstmt\ottinterrule}
+
+\ottgrammartabular{\ottM\ottinterrule}
+
+\ottgrammartabular{\ottCL\ottinterrule}
+
+\ottgrammartabular{\ottP\ottinterrule}
+
 \section{Semantics}
 
 In this section, we define the semantics of ABS.
 
-\subsection{Meta syntax}
+\subsection{Typing syntax}
 
 \ottgrammartabular{\ottsig\ottinterrule}
 
 \ottgrammartabular{\ottctxv\ottinterrule}
 
-\subsection{Typing}
+\subsection{Runtime syntax}
+
+\ottgrammartabular{\otttask\ottinterrule}
+
+\ottgrammartabular{\ottcn\ottinterrule}
+
+\subsection{Typing relation}
 
 \ottdefntypXXe{}
 
 \ottdefntypXXF{}
 
-\subsection{Reduction}
+\subsection{Reduction relation}
 
 \ottdefnredXXe{}
 

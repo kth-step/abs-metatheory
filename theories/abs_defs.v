@@ -48,9 +48,9 @@ Inductive sig : Set :=
  | sig_sig (_:list T) (T_5:T).
 
 Inductive rhs : Set :=  (* right-hand side in assignment *)
- | rhs_e (e5:e)
- | rhs_invoc (o5:o) (m5:m) (_:list e) (* we invoke on an object directly, not by some mysterious evaluation to object identifiers *)
- | rhs_get (f5:f).
+ | rhs_e (e5:e) (* expression *)
+ | rhs_invoc (o5:o) (m5:m) (_:list e) (* method invocation *)
+ | rhs_get (f5:f) (* value of future *).
 
 Inductive ctxv : Set := 
  | ctxv_T (T5:T)
@@ -83,7 +83,7 @@ Definition to : Set := (option t).
 Inductive P : Set :=  (* program *)
  | program (_:list CL) (_:list (T*x)) (stmt5:stmt).
 
-Inductive task : Type := 
+Inductive task : Type :=  (* runtime task *)
  | tsk (stmt5:stmt) (s5:s).
 (** induction principles *)
 Section e_rect.
