@@ -24,6 +24,39 @@ Definition G_vdash_s (G5 : G) (s5 : s) :=
 
 Notation "G1 G⊢ s1" := (G_vdash_s G1 s1) (at level 5).
 
+(* the well-typedness from the paper, ours is a little stricter *)
+Definition sub_well_typed (Γ : G) (σ : s) :=
+  forall (x_: x) (T_: T),
+    x_ ∈ dom σ ->
+    Γ !! x_ = Some (ctxv_T T_) ->
+    typ_e Γ (e_subst_s σ (e_var x_)) T_.
+
+(* just like our vdash, this is the opposite way from other well-typing relations *)
+Lemma subG_sub_wt: forall Γ1 Γ2 σ,
+    Γ1 ⊆ Γ2 -> sub_well_typed Γ2 σ -> sub_well_typed Γ1 σ.
+Proof.
+  intros*.
+  specialize (H0 x_ T_ H1).
+  autorewrite with e_subst_s in *.
+  apply elem_of_dom in H1.
+  inv H1.
+  setoid_rewrite H3.
+  eapply map_subseteq_spec in H; eauto.
+  apply H0 in H.
+  setoid_rewrite H3 in H.
+  inv H; constructor.
+Qed.
+
+Lemma vdash_implies_wt: forall Γ σ,
+    G_vdash_s Γ σ ->
+    sub_well_typed Γ σ.
+Proof.
+  intros*.
+  pose proof H x_ (ctxv_T T_) H1 as (?t_ & LU & TYP).
+  autorewrite with e_subst_s.
+  now rewrite LU.
+Qed.
+
 Lemma fresh_subG: forall G0 s0 (sub_list: list (T*x*t*x)),
   G0 G⊢ s0 ->
   fresh_vars_s (map (fun '(_,_,_,y)=>y) sub_list) s0 ->

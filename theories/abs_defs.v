@@ -7,7 +7,7 @@ Require Import Ott.ott_list_core.
 
 
 From Equations Require Import Equations.
-From stdpp Require Import prelude strings gmap gmultiset.
+From stdpp Require Import prelude strings gmap gmultiset numbers.
 
 #[export] Hint Resolve bool_dec : ott_coq_equality.
 #[export] Hint Resolve Ascii.ascii_dec : ott_coq_equality.
@@ -122,7 +122,7 @@ Inductive M : Set :=  (*r method definition *)
 Inductive CL : Set :=  (*r class definition *)
  | class (C5:C) (_:list (T*x)) (_:list M).
 
-Definition a : Type := list (T*x*t).
+Definition a : Type := gmap x (ctxv*t).
 
 Definition to : Set := (option t).
 
@@ -131,6 +131,11 @@ Inductive P : Set :=  (*r program *)
 
 Inductive task : Type := 
  | tsk (stmt5:stmt) (a5:a).
+Lemma eq_T: forall (x y : T), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_T : ott_coq_equality.
 (** induction principles *)
 Section e_rect.
 
@@ -324,6 +329,7 @@ Qed.
 
 #[export] Instance a_eq_dec: EqDecision a.
 Proof.
+  apply gmap_eq_dec.
   unfold EqDecision, Decision.
   repeat decide equality; auto with ott_coq_equality.
 Qed.
@@ -337,33 +343,6 @@ Proof.
   - apply stmt_eq_dec.
 Defined.
 #[export] Hint Resolve task_eq_dec : ott_coq_equality.
-
-#[export] Instance a_dom : Dom a (list x) :=
-  map (fun '(_,x,_) => x).
-
-Fixpoint update_aux (al ar:a) (x0:x) (v:t): a :=
-  match ar with
-  | [] => al
-  | (T,y,t)::ar' =>
-      if (decide (x0 = y))
-      then al ++ [(T, y, v)] ++ ar'
-      else update_aux (al ++ [(T,y,t)]) ar' x0 v
-  end.
-
-Definition update: a -> x -> t -> a := update_aux [].
-
-#[export] Instance insert_a: Insert x t a :=
-  fun x t a => update a x t.
-
-Fixpoint lookup_a_aux (x:string) (a0:a): option t :=
-  match a0 with
-  | [] => None
-  | (_,y,t) :: rest => if decide (x = y)
-                     then Some t else lookup_a_aux x rest
-  end.
-
-#[export] Instance lookup_a: Lookup string t a := lookup_a_aux.
-
 
 #[export] Instance countable_task: Countable task.
 (* is there some automation for this? *)

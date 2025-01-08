@@ -381,28 +381,6 @@ where e_subst_list_s: s -> list e -> list e := {
     e_subst_list_s σ (e_::es) := e_subst_s σ e_ :: e_subst_list_s σ es
   }.
 
-(* the well-typedness from the paper, ours is a little stricter *)
-Definition sub_well_typed (Γ : G) (σ : s) :=
-  forall (x_: x) (T_: T),
-    x_ ∈ dom σ ->
-    Γ !! x_ = Some (ctxv_T T_) ->
-    typ_e Γ (e_subst_s σ (e_var x_)) T_.
-
-(* just like our vdash, this is the opposite way from other well-typing relations *)
-Lemma subG_sub_wt: forall Γ1 Γ2 σ,
-    Γ1 ⊆ Γ2 -> sub_well_typed Γ2 σ -> sub_well_typed Γ1 σ.
-Proof.
-  intros*.
-  specialize (H0 x_ T_ H1).
-  autorewrite with e_subst_s in *.
-  apply elem_of_dom in H1.
-  inv H1.
-  setoid_rewrite H3.
-  eapply map_subseteq_spec in H; eauto.
-  apply H0 in H.
-  setoid_rewrite H3 in H.
-  inv H; constructor.
-Qed.
 
 (** Operations for typing and some lemmas about them *)
 Equations typ_es: G -> list e -> list T -> Prop := {

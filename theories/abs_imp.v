@@ -43,9 +43,9 @@ Proof.
 Qed.
 
 Equations bind_params (vs: list t) (params: list (T*x)): a := {
-    bind_params [] _ := [];
-    bind_params _ [] := [];
-    bind_params (v::vs) ((T,x)::Txs) := (T, x, v) :: bind_params vs Txs
+    bind_params [] _ := ∅;
+    bind_params _ [] := ∅;
+    bind_params (v::vs) ((T,x)::Txs) := <[x:=(ctxv_T T, v)]> (bind_params vs Txs)
   }.
 
 Equations bind (m0:m) (vs: list t) (f0:f) (CL0:CL) : option task := {
@@ -57,7 +57,7 @@ Equations bind (m0:m) (vs: list t) (f0:f) (CL0:CL) : option task := {
       end
   }.
 
-Definition a_to_s: a -> s := foldr (fun '(_, x, v) s0 => <[x:=v]> s0) ∅.
+Definition a_to_s: a -> s := fmap snd.
 
 Definition eval (Fs: list F) (s0:s) (e0:e) (v:t): Prop :=
   exists sf, (rtc (reduce Fs)) (e0, s0) (e_t v, sf).
@@ -96,9 +96,9 @@ Variant occurs_in: config -> string -> Prop :=
 .
 
 Definition fresh (y:string) (σ:config) : Prop := ~ occurs_in σ y.
-(* should we also require no invocations that mention f?
-   alternatively we could assume (id_of f) is always present for invocations
- *)
+
+Definition alter_val (v:t): option (ctxv *t) -> option (ctxv *t) := option_map (fun '(T, _) => (T, v)).
+Definition update_a (y:x) (v:t): a -> a := partial_alter (alter_val v) y.
 
 Inductive stmt_step {Fs: list F}: config -> config -> Prop :=
 | step_activate: forall σ p q i a C,
@@ -111,14 +111,14 @@ Inductive stmt_step {Fs: list F}: config -> config -> Prop :=
     x ∉ dom a ->
     eval Fs (union (a_to_s a) (a_to_s l)) e v ->
     σ !! i = Some (cn_object C a (Some (tsk (stmt_seq (stmt_asgn x (rhs_e e)) s) l)) q) ->
-    stmt_step σ (<[i:=(cn_object C a (Some (tsk s (<[x:=v]> l))) q)]> σ)
+    stmt_step σ (<[i:=(cn_object C a (Some (tsk s (update_a x v l))) q)]> σ)
 
 | step_asgn2: forall σ o a C l x e s q v,
     x ∈ dom a ->
     x ∉ dom l ->
     eval Fs (union (a_to_s a) (a_to_s l)) e v ->
     σ !! o = Some (cn_object C a (Some (tsk (stmt_seq (stmt_asgn x (rhs_e e)) s) l)) q) ->
-    stmt_step σ (<[o:=(cn_object C (<[x:=v]> a) (Some (tsk s l)) q)]> σ)
+    stmt_step σ (<[o:=(cn_object C (update_a x v a) (Some (tsk s l)) q)]> σ)
 
 | step_cond1: forall σ o a C l e s1 s2 s q,
     eval Fs (union (a_to_s a) (a_to_s l)) e (t_b true) ->
@@ -152,11 +152,11 @@ Inductive stmt_step {Fs: list F}: config -> config -> Prop :=
                    (<[i:=cn_invoc o' f m vs]>
                       (<[j:=cn_future f None]> σ)))
 
-| step_return: forall σ o a C l e v q f fi,
+| step_return: forall σ o a C l e v q f fi T_fut,
     eval Fs (union (a_to_s a) (a_to_s l)) e v ->
     σ !! fi = Some (cn_future f None) ->
     σ !! o = Some (cn_object C a (Some (tsk (stmt_ret e) l)) q) ->
-    l !! destiny = Some (t_fut fi) ->
+    l !! destiny = Some (T_fut, t_fut fi) ->
     stmt_step σ (<[o:=cn_object C a None q]>
                    (<[fi:=cn_future f (Some v)]> σ))
 
