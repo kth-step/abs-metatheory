@@ -917,6 +917,54 @@ Proof.
   - setoid_rewrite lookup_partial_alter_ne; auto.
 Qed.
 
+(* solves all the easy preservation of minimality leaving the one goal that requires internvention *)
+Ltac solve_minimality :=
+  match goal with
+    MIN: minimal _ _ |- _ => intros ?y ?IN_DOM; apply MIN in IN_DOM; inv IN_DOM;
+      match goal with
+        _ : ?σ !! ?i = _, _ : ?σ !! ?j = _ |- _ => is_eq i j
+      end;
+      simplify_map_eq;
+      try (now eapply occurs_in_object_fields; eauto;
+        apply lookup_insert);
+      try (now eapply occurs_in_object_fields; eauto;
+        setoid_rewrite lookup_insert_ne; eauto);
+      try (now eapply occurs_in_object_task; eauto;
+        apply lookup_insert);
+      try (now eapply occurs_in_object_task; eauto;
+        setoid_rewrite lookup_insert_ne; eauto);
+      try (now eapply occurs_in_object_queue; eauto;
+        apply lookup_insert);
+      try (now eapply occurs_in_object_queue; eauto;
+        setoid_rewrite lookup_insert_ne; eauto);
+      try (now eapply occurs_in_future;
+        setoid_rewrite lookup_insert_ne; eauto);
+      try (now eapply occurs_in_invoc_fut;
+        setoid_rewrite lookup_insert_ne; eauto);
+      try (now eapply occurs_in_invoc_ob;
+        setoid_rewrite lookup_insert_ne; eauto)
+  end.
+
+Lemma elem_of_dom_update_a: forall l x y v,
+    y ∈ dom l ->
+    x ∈ dom l ->
+    y ∈ dom (update_a x v l).
+Proof.
+  intros.
+  apply elem_of_dom in H, H0.
+  inv H.
+  inv H0.
+  apply elem_of_dom.
+  unfold update_a.
+  is_eq x y; simplify_map_eq.
+  - destruct x0.
+    eexists.
+    setoid_rewrite lookup_partial_alter.
+    now setoid_rewrite H1.
+  - eexists.
+    now setoid_rewrite lookup_partial_alter_ne; eauto.
+Qed.
+
 Theorem type_preservation : forall (Γ: G),
     Forall (typ_F Γ) Fs ->
     Forall (CL_well_typed Γ) Cs ->
@@ -929,50 +977,18 @@ Proof.
   intros Γ TYP_Fs TYP_Cs σ σ' WT MIN STEP.
   inv STEP.
   - exists Γ; repeat split; auto.
-
-    (* this minimality preservation is extremely tedious *)
-    (* TODO: automate? *)
-    + intros*.
-      apply MIN in H1.
-      inv H1.
-      * is_eq i i0; simplify_map_eq.
-        -- eapply occurs_in_object_fields; eauto.
-           apply lookup_insert.
-        -- eapply occurs_in_object_fields; eauto.
-           setoid_rewrite lookup_insert_ne; eauto.
-      * is_eq i i0; simplify_map_eq.
-        eapply occurs_in_object_task; eauto.
-        setoid_rewrite lookup_insert_ne; eauto.
-      * is_eq i i0; simplify_map_eq.
-        -- destruct (task_eq_dec p (tsk p0 l)); subst.
-           ++ eapply occurs_in_object_task; eauto.
-              eapply lookup_insert.
-           ++ assert (tsk p0 l ∈ (remove p q)). {
-                epose proof elem_of_difference q {[+ p +]} (tsk p0 l) as ELEM_OF_DIFF.
-                apply ELEM_OF_DIFF.
-                split; auto.
-                apply not_eq_sym in n.
-                pose proof multiplicity_singleton_ne _ _ n.
-                inv 1.
-                - setoid_rewrite H1 in H6.
-                  discriminate.
-                - setoid_rewrite H1 in H5.
-                  inv H5.
-              }
-              eapply occurs_in_object_queue with (q:=remove p q); eauto.
-              apply lookup_insert.
-        -- eapply occurs_in_object_queue; eauto.
-           setoid_rewrite lookup_insert_ne; eauto.
-      * is_eq i i0; simplify_map_eq.
-        eapply occurs_in_future.
-        setoid_rewrite lookup_insert_ne; eauto.
-      * is_eq i i0; simplify_map_eq.
-        eapply occurs_in_invoc_fut.
-        setoid_rewrite lookup_insert_ne; eauto.
-      * is_eq i i0; simplify_map_eq.
-        eapply occurs_in_invoc_ob.
-        setoid_rewrite lookup_insert_ne; eauto.
-
+    + solve_minimality.
+      destruct (task_eq_dec p (tsk p0 l)); subst.
+      * eapply occurs_in_object_task; eauto.
+        eapply lookup_insert.
+      * assert (tsk p0 l ∈ (remove p q)). {
+          set_unfold.
+          apply not_eq_sym in n.
+          setoid_rewrite (multiplicity_singleton_ne _ _ n).
+          lia.
+        }
+        eapply occurs_in_object_queue with (q:=remove p q); eauto.
+        apply lookup_insert.
     + intros*.
       lookup_cases H1 i i0.
       * specialize (WT _ _ H0).
@@ -993,7 +1009,10 @@ Proof.
       as (?Γ & ?SUB & ? & ?TYP_E).
     exists Γ.
     repeat split; auto.
-    + admit.
+    + solve_minimality.
+      eapply occurs_in_object_task with (l:=(update_a x v l)).
+      * apply elem_of_dom_update_a; auto.
+      * apply lookup_insert.
 
     + intros*.
       lookup_cases H9 i i0.
@@ -1023,7 +1042,10 @@ Proof.
       as (?Γ & ?SUB & ? & ?TYP_E).
     exists Γ.
     repeat split; auto.
-    + admit.
+    + solve_minimality.
+      eapply occurs_in_object_fields with (a:=(update_a x v a)).
+      * apply elem_of_dom_update_a; auto.
+      * apply lookup_insert.
     + intros*.
       lookup_cases H9 i o.
     * econstructor; eauto.
@@ -1039,7 +1061,7 @@ Proof.
     specialize (WT _ _ H0).
     unfold_typing.
     exists Γ; repeat split; auto.
-    + admit.
+    + solve_minimality.
     + intros*.
       lookup_cases H1 o i.
       * repeat (econstructor; eauto).
@@ -1049,7 +1071,7 @@ Proof.
     specialize (WT _ _ H0).
     unfold_typing.
     exists Γ; repeat split; auto.
-    + admit.
+    + solve_minimality.
     + intros*.
       lookup_cases H1 o i.
       * repeat (econstructor; eauto).
@@ -1059,7 +1081,7 @@ Proof.
     specialize (WT _ _ H).
     unfold_typing.
     exists Γ; repeat split; auto.
-    + admit.
+    + solve_minimality.
     + intros*.
       lookup_cases H0 o i.
       * repeat (econstructor; eauto).
@@ -1069,7 +1091,9 @@ Proof.
     specialize (WT _ _ H).
     unfold_typing.
     exists Γ; repeat split; auto.
-    + admit.
+    + solve_minimality.
+      admit.
+      (*problem: when we end a task, the context is no longer minimal since we removed a task with its local state *)
     + intros*.
       lookup_cases H0 o i.
       * repeat (econstructor; eauto).
@@ -1079,7 +1103,7 @@ Proof.
     specialize (WT _ _ H).
     unfold_typing.
     exists Γ; repeat split; auto.
-    + admit.
+    + solve_minimality.
     + intros*.
       lookup_cases H0 o i.
       * repeat (econstructor; eauto).
@@ -1098,7 +1122,68 @@ Proof.
     + apply subG_add; auto.
       apply not_elem_of_dom.
       eapply fresh_config_wt; eauto.
-    + admit. (* minimality is preserved *)
+    + intros*.
+      setoid_rewrite dom_insert in H5.
+      apply elem_of_union in H5.
+      destruct H5.
+      * apply elem_of_singleton in H5; subst.
+        eapply occurs_in_invoc_fut with (i:=i).
+        setoid_rewrite lookup_insert_ne.
+        apply lookup_insert.
+        intros ->.
+        apply H0.
+        now apply elem_of_dom.
+      * revert H5.
+        generalize dependent y.
+        solve_minimality.
+        -- eapply occurs_in_object_fields with (i:=i0); eauto.
+           repeat setoid_rewrite lookup_insert_ne; eauto.
+           ++ intros ->.
+              apply H1.
+              now apply elem_of_dom.
+           ++ intros ->.
+              apply H0.
+              now apply elem_of_dom.
+        -- eapply occurs_in_object_task with (i:=i0); eauto.
+           repeat setoid_rewrite lookup_insert_ne; eauto.
+           ++ intros ->.
+              apply H1.
+              now apply elem_of_dom.
+           ++ intros ->.
+              apply H0.
+              now apply elem_of_dom.
+        -- eapply occurs_in_object_queue with (i:=i0); eauto.
+           repeat setoid_rewrite lookup_insert_ne; eauto.
+           ++ intros ->.
+              apply H1.
+              now apply elem_of_dom.
+           ++ intros ->.
+              apply H0.
+              now apply elem_of_dom.
+        -- eapply occurs_in_future with (i:=i0); eauto.
+           repeat setoid_rewrite lookup_insert_ne; eauto.
+           ++ intros ->.
+              apply H1.
+              now apply elem_of_dom.
+           ++ intros ->.
+              apply H0.
+              now apply elem_of_dom.
+        -- eapply occurs_in_invoc_fut with (i:=i0); eauto.
+           repeat setoid_rewrite lookup_insert_ne; eauto.
+           ++ intros ->.
+              apply H1.
+              now apply elem_of_dom.
+           ++ intros ->.
+              apply H0.
+              now apply elem_of_dom.
+        -- eapply occurs_in_invoc_ob with (i:=i0); eauto.
+           repeat setoid_rewrite lookup_insert_ne; eauto.
+           ++ intros ->.
+              apply H1.
+              now apply elem_of_dom.
+           ++ intros ->.
+              apply H0.
+              now apply elem_of_dom.
     + intros*.
       lookup_cases H5 oi i0.
       * econstructor; eauto.
@@ -1165,14 +1250,37 @@ Proof.
   - pose proof WT _ _ H0 as fut_well_typed.
     pose proof WT _ _ H1 as ob_well_typed.
     exists Γ; repeat split; auto.
-    { admit. }
-    intros*.
+    + solve_minimality.
+      * eapply occurs_in_object_fields with (i:=i); eauto.
+        repeat setoid_rewrite lookup_insert_ne; eauto.
+        intros ->; simplify_map_eq.
+      * admit.
+      (* another problematic case of removing an object *)
+      * eapply occurs_in_object_task with (i:=i); eauto.
+        repeat setoid_rewrite lookup_insert_ne; eauto.
+        intros ->; simplify_map_eq.
+      * eapply occurs_in_object_queue with (i:=i); eauto.
+        repeat setoid_rewrite lookup_insert_ne; eauto.
+        intros ->; simplify_map_eq.
+      * is_eq i fi; simplify_map_eq.
+        -- eapply occurs_in_future with (i:=i); eauto.
+           setoid_rewrite lookup_insert_ne; eauto.
+           apply lookup_insert.
+        -- eapply occurs_in_future with (i:=i); eauto.
+           repeat setoid_rewrite lookup_insert_ne; eauto.
+      * eapply occurs_in_invoc_fut with (i:=i); eauto.
+        repeat setoid_rewrite lookup_insert_ne; eauto.
+        intros ->; simplify_map_eq.
+      * eapply occurs_in_invoc_ob with (i:=i); eauto.
+        repeat setoid_rewrite lookup_insert_ne; eauto.
+        intros ->; simplify_map_eq.
+    + intros*.
     unfold_typing.
     lookup_cases H3 o i.
-    + econstructor; eauto.
+    * econstructor; eauto.
       econstructor.
-    + lookup_cases H3 fi i.
-      * econstructor; eauto.
+    * lookup_cases H3 fi i.
+      -- econstructor; eauto.
         epose proof type_preservation_eval _ _ _ _ _ _ _ H5 H.
         enough (T0 = T) by (subst; inv H3; constructor).
         erewrite lookup_extend_by_a in H12; eauto.
@@ -1181,12 +1289,12 @@ Proof.
         epose proof id_of_consistent σ (name_of fi) f None H0 as <-.
         pose proof H9 _ _ _ H2 as (?&?).
         inv H7.
-      * eapply WT; eauto.
+      -- eapply WT; eauto.
 
   - pose proof WT _ _ H as fut_well_typed.
     pose proof WT _ _ H0 as ob_well_typed.
     exists Γ; repeat split; auto.
-    { admit. }
+    { solve_minimality. }
     intros*.
     unfold_typing.
     lookup_cases H1 o i.
@@ -1207,56 +1315,97 @@ Proof.
   - pose proof WT _ _ H as ob_well_typed.
     pose proof WT _ _ H0 as inv_well_typed.
     exists Γ; repeat split; auto.
-    { admit. }
-    intros*.
-    unfold_typing.
-    + lookup_cases H1 oi i0.
-      * repeat (econstructor; eauto).
-        apply q_wt_add; auto.
-        replace CL with Cl in * by admit. (* by welformedness of class_of, probably *)
-        destruct p'.
-        eapply bind_wt; eauto.
-        -- admit. (* consistency between arguments and type list *)
-        -- apply lookup_weaken with Γ; auto.
-            apply subG_extend.
-            apply CL_wt_fields_fresh.
-            eapply Forall_forall; eauto.
-            eapply get_class_decl_some; eauto.
-        -- eapply subG_typ_es; last apply H9.
-            apply subG_extend.
-            apply CL_wt_fields_fresh.
-            eapply Forall_forall; eauto.
-            eapply get_class_decl_some; eauto.
-        -- admit. (* well-typedness of classes (and closure under extensions) *)
-      * is_eq i i0.
-        -- exfalso.
-            setoid_rewrite (lookup_delete σ i) in H1.
-            inv H1.
-        -- setoid_rewrite lookup_delete_ne in H1; auto.
-            eapply WT; eauto.
-    + lookup_cases H1 oi i0.
-      * repeat (econstructor; eauto).
-        apply q_wt_add; auto.
-        replace CL with Cl in * by admit. (* by welformedness of class_of, probably *)
-        eapply bind_wt; eauto.
-        -- admit. (* consistency between arguments and type list *)
-        -- apply lookup_weaken with Γ; auto.
-            apply subG_extend.
-            apply CL_wt_fields_fresh.
-            eapply Forall_forall; eauto.
-            eapply get_class_decl_some; eauto.
-        -- eapply subG_typ_es; last apply H9.
-            apply subG_extend.
-            apply CL_wt_fields_fresh.
-            eapply Forall_forall; eauto.
-            eapply get_class_decl_some; eauto.
-        -- admit. (* well-typedness of classes (and closure under extensions) *)
+    + solve_minimality.
+      * is_eq i0 oi; simplify_map_eq.
+        -- eapply occurs_in_object_fields with (i:=i0); eauto.
+           apply lookup_insert.
+        -- eapply occurs_in_object_fields with (i:=i0); eauto.
+           setoid_rewrite lookup_insert_ne; eauto.
+           setoid_rewrite lookup_delete_ne; eauto.
+      * is_eq i0 oi; simplify_map_eq.
+        -- eapply occurs_in_object_task with (i:=i0); eauto.
+           apply lookup_insert.
+        -- eapply occurs_in_object_task with (i:=i0); eauto.
+           setoid_rewrite lookup_insert_ne; auto.
+           setoid_rewrite lookup_delete_ne; eauto.
+      * is_eq i0 oi; simplify_map_eq.
+        --  assert (tsk p0 l ∈ (add p' q)). {
+              set_unfold.
+              now left.
+            }
+            eapply occurs_in_object_queue with (i:=i0) (q:= add p' q); eauto.
+            apply lookup_insert.
+        -- eapply occurs_in_object_queue with (i:=i0); eauto.
+           setoid_rewrite lookup_insert_ne; auto.
+           setoid_rewrite lookup_delete_ne; eauto.
 
-      * is_eq i i0.
-        -- exfalso.
+      * is_eq i0 oi; simplify_map_eq.
+        eapply occurs_in_future with (i:=i0); eauto.
+        setoid_rewrite lookup_insert_ne; auto.
+        setoid_rewrite lookup_delete_ne; eauto.
+
+      * admit.
+        (* problem: we delete the invocation that contained the future *)
+      * is_eq i0 oi; simplify_map_eq.
+        eapply occurs_in_invoc_fut with (i:=i0); eauto.
+        setoid_rewrite lookup_insert_ne; auto.
+        setoid_rewrite lookup_delete_ne; eauto.
+      * admit.
+      (* problem: we delete the invocation that contained the object *)
+      * is_eq i0 oi; simplify_map_eq.
+        eapply occurs_in_invoc_ob with (i:=i0); eauto.
+        setoid_rewrite lookup_insert_ne; auto.
+        setoid_rewrite lookup_delete_ne; eauto.
+
+    + intros*.
+      unfold_typing.
+      * lookup_cases H1 oi i0.
+        -- repeat (econstructor; eauto).
+           apply q_wt_add; auto.
+           replace CL with Cl in * by admit. (* by welformedness of class_of, probably *)
+           destruct p'.
+           eapply bind_wt; eauto.
+           ++ admit. (* consistency between arguments and type list *)
+           ++ apply lookup_weaken with Γ; auto.
+              apply subG_extend.
+              apply CL_wt_fields_fresh.
+              eapply Forall_forall; eauto.
+              eapply get_class_decl_some; eauto.
+           ++ eapply subG_typ_es; last apply H9.
+              apply subG_extend.
+              apply CL_wt_fields_fresh.
+              eapply Forall_forall; eauto.
+              eapply get_class_decl_some; eauto.
+           ++ admit. (* well-typedness of classes (and closure under extensions) *)
+      -- is_eq i i0.
+        ++ exfalso.
             setoid_rewrite (lookup_delete σ i) in H1.
             inv H1.
-        -- setoid_rewrite lookup_delete_ne in H1; auto.
+        ++ setoid_rewrite lookup_delete_ne in H1; auto.
+            eapply WT; eauto.
+    * lookup_cases H1 oi i0.
+      -- repeat (econstructor; eauto).
+        apply q_wt_add; auto.
+        replace CL with Cl in * by admit. (* by welformedness of class_of, probably *)
+        eapply bind_wt; eauto.
+        ++ admit. (* consistency between arguments and type list *)
+        ++ apply lookup_weaken with Γ; auto.
+            apply subG_extend.
+            apply CL_wt_fields_fresh.
+            eapply Forall_forall; eauto.
+            eapply get_class_decl_some; eauto.
+        ++ eapply subG_typ_es; last apply H9.
+            apply subG_extend.
+            apply CL_wt_fields_fresh.
+            eapply Forall_forall; eauto.
+            eapply get_class_decl_some; eauto.
+        ++ admit. (* well-typedness of classes (and closure under extensions) *)
+
+      -- is_eq i i0.
+        ++ exfalso.
+            setoid_rewrite (lookup_delete σ i) in H1.
+            inv H1.
+        ++ setoid_rewrite lookup_delete_ne in H1; auto.
             eapply WT; eauto.
 
             Unshelve.
